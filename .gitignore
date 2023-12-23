@@ -7,29 +7,23 @@
 # Build results
 target/
 
+# Testing configs
+*.json
+
+# Code coverage stuff
+*.profraw
+
 # IDEs
 .vscode/
 .idea/
 *.iml
-.env
-
-# User-gen
-metadata.csv
-
-# ENV
-.env
+node_modules/
 
 # Auto-gen
 .cargo-ok
 
-# Build artifacts
-*.wasm
-hash.txt
-contracts.txt
-artifacts/
-
-# code coverage
-tarpaulin-report.*
-
-# integration tests
-gas_reports/
+*.pyc
+__pycache__/
+compiled
+logs
+Cargo.lock

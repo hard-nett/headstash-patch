@@ -1,51 +1,59 @@
 [workspace]
-members = [
-    "contracts/headstash-contract",
-]
 resolver = "2"
+members = [
+  # Packages
+  "packages/shade_protocol",
+  # "packages/secretcli",
+  "packages/multi_test",
+  "packages/multi_derive",
+  "packages/contract_derive",
+  "packages/ethereum_verify",
 
-[workspace.package]
-version    = "0.3.0"
-edition    = "2021"
-homepage   = "https://terp.network"
-repository = "https://github.com/terpnetwork/headstash-patch"
-license    = "Apache-2.0"
+  # Network setups
+  "contracts/airdrop",
 
-[workspace.dependencies]
-cosmwasm-schema      = "1.3.1"
-cosmwasm-std         = { version = "1.5.0", default-features = false, features = ["cosmwasm_1_3"] }
-cw-controllers       = "1.1.1"
-cw2                  = "1.1.1"
-cw4                  = "1.1.1"
-cw4-group            = "1.1.1"
-cw721                = "0.18.0"
-cw721-base           = "0.18.0"
-cw-multi-test        = "0.16.2"
-cw-storage-plus      = "1.1.0"
-cw-utils             = "1.0.1"
-schemars             = "0.8.11"
-serde                = { version = "1.0.145", default-features = false, features = ["derive"] }
-thiserror            = "1.0.31"
-url                  = "2.2.2"
-sha2                 = { version = "0.10.2", default-features = false }
-ethereum-verify      = "3.3.0"
-headstash-contract   = { version = "0.3.0", path = "contracts/headstash-contract" }
-semver               = "1"
-cw-ownable           = "0.5.1"
+  # Protocol contracts
+  "contracts/snip20",
+  "contracts/query_auth",
+  "contracts/admin",
+  "contracts/basic_staking",
+  "contracts/snip20_migration",
 
-[profile.release.package.headstash-contract]
-codegen-units = 1
-incremental   = false
+  # Staking
+  "contracts/basic_staking",
+  "contracts/snip20_derivative",
 
-[profile.release.package.cw-goop]
-codegen-units = 1
-incremental   = false
+  # DAO
+  # - Core
+  "contracts/dao/treasury", 
+  "contracts/dao/treasury_manager", 
+  # - Adapters
+  "contracts/dao/scrt_staking",
+  "contracts/dao/stkd_scrt",
+  # "contracts/dao/rewards_emission",
+  # "contracts/dao/lp_shdswap",
 
+  # Mock contracts
+  # "contracts/mock/mock_band", //TODO: migrate to v1
+  # "contracts/mock/mock_secretswap_pair", //TODO: migrate to v1
+  "contracts/mock/mock_sienna_pair",
+  # "contracts/mock/mock_adapter", //TODO: migrate to v1
+  "contracts/mock/mock_stkd_derivative",
+
+  # Tools
+  # "tools/doc2book",
+  # "launch"
+]
+
+exclude = ["packages/network_integration"]
 
 [profile.release]
-rpath            = false
-lto              = true
-overflow-checks  = true
-opt-level        = 3
-debug            = false
+opt-level = 3
+debug = false
+rpath = false
+lto = true
 debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
