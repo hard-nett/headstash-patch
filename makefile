@@ -13,25 +13,16 @@ rm ./$(1).wasm
 endef
 
 CONTRACTS = \
-		airdrop treasury treasury_manager scrt_staking \
-		snip20 query_auth admin \
-		mock_sienna_pair mock_adapter \
-		mock_stkd_derivative basic_staking snip20_migration stkd_scrt \
-		snip20_derivative
+		airdrop \
 
-PACKAGES = shade_protocol contract_harness cosmwasm_math_compat 
+PACKAGES = shade_protocol contract_harness cosmwasm_math_compat ethereum_verify
 
 release: setup
 	${build-release}
 	@$(MAKE) compress_all
 
-dao: treasury treasury_manager scrt_staking
-
 compress_all: setup
 	@$(MAKE) $(addprefix compress-,$(CONTRACTS))
-
-compress-snip20_staking: setup
-	$(call opt_and_compress,snip20_staking,spip_stkd_0)
 
 compress-%: setup
 	$(call opt_and_compress,$*,$*)
@@ -43,22 +34,12 @@ $(CONTRACTS): setup
 $(PACKAGES):
 	(cd packages/$@; cargo build)
 
-snip20: setup
-	(cd contracts/snip20; ${build-release})
-	@$(MAKE) $(addprefix compress-,snip20)
-
-snip20_staking: setup
-	(cd contracts/snip20_staking; ${build-release})
-	@$(MAKE) $(addprefix compress-,snip20_staking)
-
 test:
 	@$(MAKE) $(addprefix test-,$(CONTRACTS))
 
 test-%: %
 	(cargo test -p $*)
 
-dao-cov:
-	(cargo llvm-cov --html -p treasury -p treasury_manager; xdg-open target/llvm-cov/html/index.html)
 
 cov:
 	(cargo llvm-cov --html; xdg-open target/llvm-cov/html/index.html)

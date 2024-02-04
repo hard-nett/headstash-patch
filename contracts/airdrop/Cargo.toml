@@ -1,6 +1,6 @@
 [package]
 name = "airdrop"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Guy Garcia <guysebastiangarcia@gmail.com>"]
 edition = "2018"
 
@@ -23,9 +23,8 @@ backtraces = ["shade-protocol/backtraces"]
 debug-print = ["shade-protocol/debug-print"]
 
 [dependencies]
-ethereum-verify      =  { version = "0.1.0", path = "../../packages/ethereum_veri"}
+shade-protocol = { version = "0.1.0", path = "../../packages/shade_protocol", features = ["airdrop"] }
+ethereum-verify      =  { version = "0.1.0", path = "../../packages/ethereum_verify"}
 hex = "0.4"
-shade-protocol = { version = "0.1.0", path = "../../packages/shade_protocol", features = [
-  "airdrop"
-] }
+sha2                 = { version = "0.10.2", default-features = false }
 rs_merkle = { git = "https://github.com/FloppyDisck/rs-merkle", branch = "node_export" }

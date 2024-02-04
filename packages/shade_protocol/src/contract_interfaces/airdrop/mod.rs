@@ -4,10 +4,7 @@ pub mod errors;
 
 use crate::{
     c_std::{Addr, Binary, Uint128},
-    contract_interfaces::airdrop::{
-        account::{AccountPermit, AddressProofPermit},
-        claim_info::RequiredTask,
-    },
+    contract_interfaces::airdrop::account::{AccountPermit, AddressProofPermit},
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
 
@@ -24,7 +21,7 @@ pub struct Config {
     // The snip20 to be minted
     pub airdrop_snip20: Contract,
     // An optional, second snip20 to be minted
-    pub airdrop_snip20_optional: Option<Contract>,
+    pub airdrop_snip20_optional: Contract,
     // Airdrop amount
     pub airdrop_amount: Uint128,
     // Required tasks
@@ -34,18 +31,16 @@ pub struct Config {
     // Airdrop stops at end date if there is one
     pub end_date: Option<u64>,
     // Starts to decay at this date
-    // pub decay_start: Option<u64>,
+    pub decay_start: Option<u64>,
     // This is necessary to validate the airdrop information
     // tree root
-    pub merkle_root: Binary,
+    pub merkle_root: String,
     // tree height
     pub total_accounts: u32,
-    // max possible reward amount; used to prevent collision possibility
-    pub max_amount: Uint128,
+    // {wallet}
+    pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
     pub query_rounding: Uint128,
-
-    pub claim_msg_plaintext: String,
 }
 
 #[cw_serde]
@@ -54,30 +49,24 @@ pub struct InstantiateMsg {
     // Where the decayed tokens will be dumped, if none then nothing happens
     pub dump_address: Option<Addr>,
     pub airdrop_token: Contract,
+    // An optional, second snip20 to be minted
+    pub airdrop_snip20_optional: Contract,
     // Airdrop amount
     pub airdrop_amount: Uint128,
-    // An optional, second snip20 to be minted
-    pub airdrop_snip20_optional: Option<Contract>,
     // The airdrop time limit
     pub start_date: Option<u64>,
     // Can be set to never end
     pub end_date: Option<u64>,
     // Starts to decay at this date
-    // pub decay_start: Option<u64>,
+    pub decay_start: Option<u64>,
     // Base64 encoded version of the tree root
-    pub merkle_root: Binary,
+    pub merkle_root: String,
     // Root height
     pub total_accounts: u32,
-    // Max possible reward amount
-    pub max_amount: Uint128,
-    // Default gifted amount
-    // pub default_claim: Uint128,
-    // The task related claims
-    // pub task_claim: Vec<RequiredTask>,
-    // Protects from leaking user information by limiting amount detail
-    pub query_rounding: Uint128,
     /// {wallet}
     pub claim_msg_plaintext: String,
+    // Protects from leaking user information by limiting amount detail
+    pub query_rounding: Uint128,
 }
 
 impl InstantiateCallback for InstantiateMsg {
@@ -85,7 +74,7 @@ impl InstantiateCallback for InstantiateMsg {
 }
 
 #[cw_serde]
-pub enum sExecuteMsg {
+pub enum ExecuteMsg {
     UpdateConfig {
         admin: Option<Addr>,
         dump_address: Option<Addr>,
@@ -95,15 +84,9 @@ pub enum sExecuteMsg {
         decay_start: Option<u64>,
         padding: Option<String>,
     },
-    // AddTasks {
-    //     tasks: Vec<RequiredTask>,
-    //     padding: Option<String>,
-    // },
-    // CompleteTask {
-    //     address: Addr,
-    //     padding: Option<String>,
-    // },
     Account {
+        eth_pubkey: String,
+        amount: Option<Uint128>,
         addresses: Vec<AddressProofPermit>,
         partial_tree: Vec<Binary>,
         padding: Option<String>,
@@ -137,22 +120,12 @@ pub enum ExecuteAnswer {
     UpdateConfig {
         status: ResponseStatus,
     },
-    // AddTask {
-    //     status: ResponseStatus,
-    // },
-    // CompleteTask {
-    //     status: ResponseStatus,
-    // },
-    // Account {
-    //     status: ResponseStatus,
-    //     // Total eligible
-    //     total: Uint128,
-    //     // Total claimed
-    //     claimed: Uint128,
-    //     finished_tasks: Vec<RequiredTask>,
-    //     // Addresses claimed
-    //     addresses: Vec<Addr>,
-    // },
+    Account {
+        status: ResponseStatus,
+        addresses: Vec<Addr>,
+        eth_pubkey: String,
+        claimed: bool,
+    },
     DisablePermitKey {
         status: ResponseStatus,
     },
@@ -161,17 +134,13 @@ pub enum ExecuteAnswer {
     },
     Claim {
         status: ResponseStatus,
-        // Total eligible
-        total: Uint128,
-        // Total claimed
-        claimed: Uint128,
-        // finished_tasks: Vec<RequiredTask>,
-        // Addresses claimed
+        claimed: bool,
         addresses: Vec<Addr>,
+        eth_pubkey: String,
     },
-    // ClaimDecay {
-    //     status: ResponseStatus,
-    // },
+    ClaimDecay {
+        status: ResponseStatus,
+    },
 }
 
 #[cw_serde]
@@ -181,14 +150,14 @@ pub enum QueryMsg {
         current_date: Option<u64>,
     },
     TotalClaimed {},
-    // Account {
-    //     permit: AccountPermit,
-    //     current_date: Option<u64>,
-    // },
+    Account {
+        permit: AccountPermit,
+        eth_pubkey: String,
+    },
     AccountWithKey {
         account: Addr,
         key: String,
-        current_date: Option<u64>,
+        eth_pubkey: String,
     },
 }
 
@@ -204,27 +173,20 @@ pub enum QueryAnswer {
     Dates {
         start: u64,
         end: Option<u64>,
-        decay_start: Option<u64>,
-        decay_factor: Option<Uint128>,
     },
     TotalClaimed {
         claimed: Uint128,
     },
     Account {
-        // Total eligible
-        total: Uint128,
-        // Total claimed
-        claimed: Uint128,
-        // Total unclaimed but available
-        unclaimed: Uint128,
-        finished_tasks: Vec<RequiredTask>,
-        // Addresses claimed
+        claimed: bool,
         addresses: Vec<Addr>,
+        eth_pubkey: String,
     },
 }
 
 #[cw_serde]
 pub struct AccountVerification {
+    pub eth_pubkey: String,
     pub account: Addr,
     pub claimed: bool,
 }

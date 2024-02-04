@@ -15,6 +15,7 @@ pub enum Error {
     PermitKeyRevoked,
     PermitRejected,
     NotAdmin,
+    AlreadyClaimed,
     AccountAlreadyCreated,
     AccountDoesntExist,
     NothingToClaim,
@@ -28,6 +29,8 @@ pub enum Error {
     AirdropEnded,
     InvalidViewingKey,
     UnexpectedError,
+    WrongLength,
+    FailedVerification,
 }
 
 impl_into_u8!(Error);
@@ -47,6 +50,7 @@ impl CodeType for Error {
             Error::NotAdmin => build_string("Can only be accessed by {}", context),
             Error::AccountAlreadyCreated => build_string("Account already exists", context),
             Error::AccountDoesntExist => build_string("Account does not exist", context),
+            Error::AlreadyClaimed => build_string("Already claimed", context),
             Error::NothingToClaim => build_string("Amount to claim is 0", context),
             Error::DecayClaimed => build_string("Decay already claimed", context),
             Error::NoDecaySet => build_string("Decay has not been set", context),
@@ -62,6 +66,8 @@ impl CodeType for Error {
             Error::AirdropEnded => build_string("Airdrop ended on {}, its currently {}", context),
             Error::InvalidViewingKey => build_string("Provided viewing key is invalid", context),
             Error::UnexpectedError => build_string("Something unexpected happened", context),
+            Error::WrongLength => build_string("Wrong Length", context),
+            Error::FailedVerification => build_string("Verification Failed", context),
         }
     }
 }
@@ -69,9 +75,11 @@ impl CodeType for Error {
 const AIRDROP_TARGET: &str = "airdrop";
 
 pub fn invalid_task_percentage(percentage: &str) -> StdError {
-    DetailedError::from_code(AIRDROP_TARGET, Error::InvalidTaskPercentage, vec![
-        percentage,
-    ])
+    DetailedError::from_code(
+        AIRDROP_TARGET,
+        Error::InvalidTaskPercentage,
+        vec![percentage],
+    )
     .to_error()
 }
 
@@ -82,20 +90,20 @@ pub fn invalid_dates(
     item_b: &str,
     item_b_amount: &str,
 ) -> StdError {
-    DetailedError::from_code(AIRDROP_TARGET, Error::InvalidDates, vec![
-        item_a,
-        item_a_amount,
-        precedence,
-        item_b,
-        item_b_amount,
-    ])
+    DetailedError::from_code(
+        AIRDROP_TARGET,
+        Error::InvalidDates,
+        vec![item_a, item_a_amount, precedence, item_b, item_b_amount],
+    )
     .to_error()
 }
 
 pub fn permit_contract_mismatch(contract: &str, expected: &str) -> StdError {
-    DetailedError::from_code(AIRDROP_TARGET, Error::PermitContractMismatch, vec![
-        contract, expected,
-    ])
+    DetailedError::from_code(
+        AIRDROP_TARGET,
+        Error::PermitContractMismatch,
+        vec![contract, expected],
+    )
     .to_error()
 }
 
@@ -148,9 +156,11 @@ pub fn invalid_partial_tree() -> StdError {
 }
 
 pub fn airdrop_not_started(start: &str, current: &str) -> StdError {
-    DetailedError::from_code(AIRDROP_TARGET, Error::AirdropNotStarted, vec![
-        start, current,
-    ])
+    DetailedError::from_code(
+        AIRDROP_TARGET,
+        Error::AirdropNotStarted,
+        vec![start, current],
+    )
     .to_error()
 }
 
@@ -164,4 +174,15 @@ pub fn invalid_viewing_key() -> StdError {
 
 pub fn unexpected_error() -> StdError {
     DetailedError::from_code(AIRDROP_TARGET, Error::UnexpectedError, vec![]).to_error()
+}
+
+pub fn already_claimed() -> StdError {
+    DetailedError::from_code(AIRDROP_TARGET, Error::AlreadyClaimed, vec![]).to_error()
+}
+
+pub fn wrong_length() -> StdError {
+    DetailedError::from_code(AIRDROP_TARGET, Error::ExpectedMemo, vec![]).to_error()
+}
+pub fn failed_verification() -> StdError {
+    DetailedError::from_code(AIRDROP_TARGET, Error::ExpectedMemo, vec![]).to_error()
 }
