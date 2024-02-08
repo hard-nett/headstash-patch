@@ -24,9 +24,9 @@ use shade_protocol::{
     airdrop::{
         account::{Account, AccountKey, AddressProofMsg, AddressProofPermit},
         errors::{
-            address_already_in_account, airdrop_ended, airdrop_not_started,
-            already_claimed, decay_claimed, decay_not_set, expected_memo, failed_verification,
-            invalid_dates, not_admin, nothing_to_claim,wrong_length,
+            address_already_in_account, airdrop_ended, airdrop_not_started, already_claimed,
+            decay_claimed, decay_not_set, expected_memo, failed_verification, invalid_dates,
+            not_admin, nothing_to_claim, wrong_length,
         },
         Config, ExecuteAnswer,
     },
@@ -241,11 +241,10 @@ pub fn try_claim(
     // Check that airdrop hasn't ended
     available(&config, env)?;
 
-    // Get account from the msg sender, restricting access to query account 
+    // Get account from the msg sender, restricting access to query account
     // via eth_pubkey, as well as verify eth_sig was generated with account.eth_pubkey
     let sender = info.sender.clone();
     let account = account_r(deps.storage).load(sender.clone().as_bytes())?;
-    let updating_account: bool;
 
     // validate eth_signature
     validation::validate_claim(
@@ -278,12 +277,9 @@ pub fn try_claim(
     let mut root_buf: [u8; 32] = [0; 32];
     decode_to_slice(merkle, &mut root_buf).unwrap();
     ensure_eq!(root_buf, hash, failed_verification());
-    
-    
     // Claim airdrop
     let mut messages = vec![];
     let mut redeem_amount = Uint128::zero();
-    
     // check if eth_pubkey has already claimed
     if account.claimed == false {
         redeem_amount = claim_tokens(deps.storage, &eth_pubkey, &amount)?;
@@ -348,14 +344,28 @@ pub fn try_claim_decay(deps: DepsMut, env: &Env, _info: &MessageInfo) -> StdResu
 
                 let total_claimed = total_claimed_r(deps.storage).load()?;
                 let send_total = config.airdrop_amount.checked_sub(total_claimed)?;
-                let messages = vec![send_msg(
-                    dump_address.clone(),
-                    send_total.into(),
-                    None,
-                    None,
-                    None,
-                    &config.airdrop_snip20,
-                )?];
+                let messages = vec![
+                    {
+                        send_msg(
+                            dump_address.clone(),
+                            send_total.into(),
+                            None,
+                            None,
+                            None,
+                            &config.airdrop_snip20,
+                        )
+                    },
+                    {
+                        send_msg(
+                            dump_address.clone(),
+                            send_total.into(),
+                            None,
+                            None,
+                            None,
+                            &config.airdrop_snip20_optional,
+                        )
+                    },
+                ];
 
                 return Ok(Response::new()
                     .set_data(to_binary(&ExecuteAnswer::ClaimDecay { status: Success })?));
@@ -422,7 +432,7 @@ pub fn try_add_account_addresses(
             // Update eth_pubkey if its not in an account
             // remember, this is unverified and checked when a eth_sig
             // is provided, preventing unauthorized claim status queries
-            // 
+            //
             eth_pubkey_in_account_w(storage).update(
                 eth_pubkey.to_string().as_bytes(),
                 |state| -> StdResult<bool> {

@@ -116,9 +116,9 @@ pub enum ExecuteMsg {
         proof: Vec<String>,
         padding: Option<String>,
     },
-    // ClaimDecay {
-    //     padding: Option<String>,
-    // },
+    ClaimDecay {
+        padding: Option<String>,
+    },
 }
 
 impl ExecuteCallback for ExecuteMsg {

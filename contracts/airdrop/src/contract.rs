@@ -1,7 +1,6 @@
 use crate::{
     handle::{
         try_account, try_claim, try_create_viewing_key, try_disable_permit_key, try_set_viewing_key, try_update_config
-        // try_claim_decay,
     },
     query,
     state::{config_w, decay_claimed_w, total_claimed_w},
@@ -141,7 +140,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 proof,
                 ..
             } => try_claim(deps, &env, &info, amount, eth_pubkey, eth_sig, proof),
-            // ExecuteMsg::ClaimDecay { .. } => try_claim_decay(deps, &env, &info),
+            ExecuteMsg::ClaimDecay { .. } => crate::handle::try_claim_decay(deps, &env, &info),
         },
         RESPONSE_BLOCK_SIZE,
     )
