@@ -5,7 +5,6 @@ use crate::state::{
     account_viewkey_w,
     account_w,
     address_in_account_w,
-    claim_status_r,
     claim_status_w,
     config_r,
     config_w,
@@ -25,9 +24,9 @@ use shade_protocol::{
     airdrop::{
         account::{Account, AccountKey, AddressProofMsg, AddressProofPermit},
         errors::{
-            account_does_not_exist, address_already_in_account, airdrop_ended, airdrop_not_started,
+            address_already_in_account, airdrop_ended, airdrop_not_started,
             already_claimed, decay_claimed, decay_not_set, expected_memo, failed_verification,
-            invalid_dates, not_admin, nothing_to_claim, unexpected_error, wrong_length,
+            invalid_dates, not_admin, nothing_to_claim,wrong_length,
         },
         Config, ExecuteAnswer,
     },
@@ -35,10 +34,21 @@ use shade_protocol::{
         ensure_eq, from_binary, to_binary, Addr, Api, Binary, Decimal, DepsMut, Env, MessageInfo,
         Response, StdResult, Storage, Uint128,
     },
-    query_authentication::viewing_keys::ViewingKey,
     snip20::helpers::send_msg,
-    utils::generic_response::{ResponseStatus, ResponseStatus::Success},
+    utils::generic_response::ResponseStatus::{self},
 };
+use shade_protocol::{
+    contract_interfaces::query_auth::{
+        auth::{HashedKey, Key, PermitKey},
+        RngSeed,
+    },
+    query_authentication::viewing_keys::ViewingKey,
+    utils::{
+        generic_response::ResponseStatus::Success,
+        storage::plus::{ItemStorage, MapStorage},
+    },
+};
+
 use std::{convert::TryInto, fmt::Write};
 
 #[allow(clippy::too_many_arguments)]
@@ -54,9 +64,10 @@ pub fn try_update_config(
 ) -> StdResult<Response> {
     let config = config_r(deps.storage).load()?;
     // Check if admin
-    if info.sender != config.admin {
-        return Err(not_admin(config.admin.as_str()));
-    }
+    assert!(
+        info.sender == config.admin,
+        not_admin(config.admin.as_str())
+    );
 
     // Save new info
     let mut config = config_w(deps.storage);
@@ -111,19 +122,15 @@ pub fn try_account(
     env: &Env,
     info: &MessageInfo,
     eth_pubkey: String,
-    amount: Uint128,
     addresses: Vec<AddressProofPermit>,
 ) -> StdResult<Response> {
-    // Check if airdrop active
+    // 1. Check if airdrop active
+    // 2. Check that airdrop hasn't ended
+    // 3. Setup account by cosmos signer
+    // 4. These variables are setup to facilitate updating
     let config = config_r(deps.storage).load()?;
-
-    // Check that airdrop hasn't ended
     available(&config, env)?;
-
-    // Setup account by cosmos signer
     let sender = info.sender.to_string();
-
-    // These variables are setup to facilitate updating
     let updating_account: bool;
 
     // define the msg senders account
@@ -147,10 +154,10 @@ pub fn try_account(
             // we setup an unchecked eth_pubkey for now. We will verify this eth_pubkey during
             // the claim msg, and will update to verified eth_pubkey.
 
-            // sets the accounts eth_pubkey claim status to false. note we always check claim function when checking 
+            // sets the accounts eth_pubkey claim status to false. note we always check claim function when checking
             // the signed msg with the stored address, never both or isolated;
-            // (in order for this function to be called, sender.clone was required for reading the account details,
-            // preventing the ability to determine if a eth_pubkey not yours has claimed)*
+            // (to avoid contract panic, sender.clone is required for reading the account details,
+            // prevents ability to determine if a eth_pubkey not yours has claimed)*
             claim_status_w(deps.storage, 0).save(account.eth_pubkey.as_bytes(), &false)?;
 
             account
@@ -160,16 +167,6 @@ pub fn try_account(
             acc
         }
     };
-
-    // Claim airdrop
-    let mut messages = vec![];
-    let mut redeem_amount = Uint128::zero();
-
-    if account.claimed == false {
-        redeem_amount = claim_tokens(deps.storage, &eth_pubkey, &amount)?;
-    } else {
-        return Err(nothing_to_claim());
-    }
 
     // Update account after claim to calculate difference,
     // and to save eth_pubkey as saved to the contract state.
@@ -186,21 +183,8 @@ pub fn try_account(
         )?;
     }
 
-    total_claimed_w(deps.storage)
-        .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
-
-    messages.push(send_msg(
-        info.sender.clone(),
-        redeem_amount.into(),
-        None,
-        None,
-        None,
-        &config.airdrop_snip20,
-    )?);
-
     // Save account
     account_w(deps.storage).save(sender.as_bytes(), &account)?;
-    claim_status_w(deps.storage, 0).save(account.eth_pubkey.as_bytes(), &true)?;
 
     Ok(Response::new().set_data(to_binary(&ExecuteAnswer::Account {
         status: ResponseStatus::Success,
@@ -257,10 +241,11 @@ pub fn try_claim(
     // Check that airdrop hasn't ended
     available(&config, env)?;
 
-    // Get account from the msg sender, restricting access to query account via eth_pubkey
-    // as well as verify eth sig was generated with account.eth_pubkey
+    // Get account from the msg sender, restricting access to query account 
+    // via eth_pubkey, as well as verify eth_sig was generated with account.eth_pubkey
     let sender = info.sender.clone();
     let account = account_r(deps.storage).load(sender.clone().as_bytes())?;
+    let updating_account: bool;
 
     // validate eth_signature
     validation::validate_claim(
@@ -293,13 +278,33 @@ pub fn try_claim(
     let mut root_buf: [u8; 32] = [0; 32];
     decode_to_slice(merkle, &mut root_buf).unwrap();
     ensure_eq!(root_buf, hash, failed_verification());
-
+    
+    
+    // Claim airdrop
+    let mut messages = vec![];
+    let mut redeem_amount = Uint128::zero();
+    
     // check if eth_pubkey has already claimed
-    let redeem_amount = claim_tokens(deps.storage, &eth_pubkey, &amount)?;
+    if account.claimed == false {
+        redeem_amount = claim_tokens(deps.storage, &eth_pubkey, &amount)?;
+    } else {
+        return Err(nothing_to_claim());
+    }
 
     // update global claimed amount
     total_claimed_w(deps.storage)
         .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
+
+    messages.push(send_msg(
+        info.sender.clone(),
+        redeem_amount.into(),
+        None,
+        None,
+        None,
+        &config.airdrop_snip20,
+    )?);
+
+    claim_status_w(deps.storage, 0).save(account.eth_pubkey.as_bytes(), &true)?;
 
     Ok(Response::new()
         .set_data(to_binary(&ExecuteAnswer::Claim {
@@ -393,6 +398,7 @@ pub fn try_add_account_addresses(
     // Iterate addresses
     for permit in addresses.iter() {
         if let Some(memo) = permit.memo.clone() {
+            // unwrap the permits, coming from the message memo
             let params: AddressProofMsg = from_binary(&Binary::from_base64(&memo)?)?;
 
             // Avoid verifying sender
@@ -414,6 +420,9 @@ pub fn try_add_account_addresses(
             )?;
 
             // Update eth_pubkey if its not in an account
+            // remember, this is unverified and checked when a eth_sig
+            // is provided, preventing unauthorized claim status queries
+            // 
             eth_pubkey_in_account_w(storage).update(
                 eth_pubkey.to_string().as_bytes(),
                 |state| -> StdResult<bool> {
@@ -535,4 +544,20 @@ mod validation {
             }),
         }
     }
+}
+
+// create viewing keys
+pub fn try_create_viewing_key(
+    deps: DepsMut,
+    env: Env,
+    info: MessageInfo,
+    entropy: String,
+) -> StdResult<Response> {
+    let seed = RngSeed::load(deps.storage)?.0;
+
+    let key = Key::generate(&info, &env, seed.as_slice(), &entropy.as_ref());
+
+    HashedKey(key.hash()).save(deps.storage, info.sender)?;
+
+    Ok(Response::new().set_data(to_binary(&ExecuteAnswer::CreateViewingKey { key: key.0 })?))
 }

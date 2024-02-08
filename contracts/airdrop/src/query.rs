@@ -49,17 +49,8 @@ fn account_information(
 ) -> StdResult<QueryAnswer> {
     let account = account_r(deps.storage).load(account_address.to_string().as_bytes())?;
 
-    // Calculate eligible tasks
-    // let config = config_r(deps.storage).load()?;
-
     // Check if eth address has claimed
     let claim_state = eth_pubkey_claim_r(deps.storage).may_load(account.eth_pubkey.as_bytes())?;
-
-    // match claim_state {
-    //     // Ignore if none
-    //     None => {}
-    //     Some(claimed) => {}
-    // }
 
     Ok(QueryAnswer::Account {
         claimed: claim_state.unwrap(),

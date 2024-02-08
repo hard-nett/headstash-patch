@@ -1,6 +1,5 @@
 #[cfg(test)]
 pub mod tests {
-    use crate::handle::inverse_normalizer;
     use shade_protocol::{
         airdrop::account::{AddressProofMsg, AddressProofPermit, FillerMsg},
         c_std::{from_binary, testing::mock_dependencies, Addr, Binary, Uint128},
@@ -9,19 +8,6 @@ pub mod tests {
             transaction::{PermitSignature, PubKey},
         },
     };
-
-    #[test]
-    fn decay_factor() {
-        assert_eq!(
-            Uint128::new(50u128),
-            Uint128::new(100u128) * inverse_normalizer(100, 200, 300)
-        );
-
-        assert_eq!(
-            Uint128::new(25u128),
-            Uint128::new(100u128) * inverse_normalizer(0, 75, 100)
-        );
-    }
 
     const MSGTYPE: &str = "wasm/MsgExecuteContract";
 

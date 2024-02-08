@@ -84,11 +84,21 @@ pub enum ExecuteMsg {
         decay_start: Option<u64>,
         padding: Option<String>,
     },
+    /// * Creates or Updates an Account. 
+    /// * Uses the msg sender address as key to 
+    /// search if an account exist when a owner interacts.
+    /// * Stores an unverified eth_pubkey that will be used to verify
+    /// ownership of eth_sig provided when claiming headstash. 
+    /// * 
     Account {
         eth_pubkey: String,
         amount: Option<Uint128>,
         addresses: Vec<AddressProofPermit>,
         partial_tree: Vec<Binary>,
+        padding: Option<String>,
+    },
+    CreateViewingKey {
+        entropy: String,
         padding: Option<String>,
     },
     DisablePermitKey {
@@ -141,6 +151,7 @@ pub enum ExecuteAnswer {
     ClaimDecay {
         status: ResponseStatus,
     },
+    CreateViewingKey { key: String },
 }
 
 #[cw_serde]

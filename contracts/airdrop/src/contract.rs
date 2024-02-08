@@ -1,10 +1,6 @@
 use crate::{
     handle::{
-        try_account,
-        try_claim,
-        try_disable_permit_key,
-        try_set_viewing_key,
-        try_update_config,
+        try_account, try_claim, try_create_viewing_key, try_disable_permit_key, try_set_viewing_key, try_update_config
         // try_claim_decay,
     },
     query,
@@ -122,7 +118,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             ),
             ExecuteMsg::Account {
                 eth_pubkey,
-                amount,
                 addresses,
                 ..
             } => try_account(
@@ -130,9 +125,11 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 &env,
                 &info,
                 eth_pubkey,
-                amount.unwrap_or_default(),
                 addresses,
             ),
+            ExecuteMsg::CreateViewingKey { entropy, .. } => {
+                try_create_viewing_key(deps, env, info, entropy)
+            }
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
