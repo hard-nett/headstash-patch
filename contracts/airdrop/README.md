@@ -45,7 +45,6 @@ Contract responsible to handle snip20 airdrop
 | max_amount     | String        | Used to limit the user permit amounts (lowers exploit possibility)         | no       |
 | default_claim  | String        | The default amount to be gifted regardless of tasks                        | no       |
 | task_claim     | RequiredTasks | The amounts per tasks to gift                                              | no       |
-| query_rounding | string        | To prevent leaking information, total claimed is rounded off to this value | no       |
 
 ##Admin
 
@@ -58,7 +57,6 @@ Updates the given values
 |----------------|--------|------------------------------------------------------|----------|
 | admin          | string | New contract admin; SHOULD be a valid bech32 address | yes      |
 | dump_address   | string | Sets the dump address if there isnt any              | yes      |
-| query_rounding | String | To prevent leaking information                       | yes      |
 | start_date     | u64    | When the airdrop starts in UNIX time                 | yes      |
 | end_date       | u64    | When the airdrop ends in UNIX time                   | yes      |
 | decay_start    | u64    | When the airdrop decay starts in UNIX time           | yes      |

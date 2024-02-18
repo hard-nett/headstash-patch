@@ -30,7 +30,6 @@ impl ItemStorage for Admin {
     const ITEM: Item<'static, Self> = Item::new("admin-");
 }
 
-#[cfg(feature = "query_auth_impl")]
 #[cw_serde]
 pub struct RngSeed(pub Vec<u8>);
 

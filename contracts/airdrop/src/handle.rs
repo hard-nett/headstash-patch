@@ -58,7 +58,6 @@ pub fn try_update_config(
     info: &MessageInfo,
     admin: Option<Addr>,
     dump_address: Option<Addr>,
-    query_rounding: Option<Uint128>,
     start_date: Option<u64>,
     end_date: Option<u64>,
 ) -> StdResult<Response> {
@@ -77,9 +76,6 @@ pub fn try_update_config(
         }
         if let Some(dump_address) = dump_address {
             state.dump_address = Some(dump_address);
-        }
-        if let Some(query_rounding) = query_rounding {
-            state.query_rounding = query_rounding;
         }
         if let Some(start_date) = start_date {
             // Avoid date collisions

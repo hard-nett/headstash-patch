@@ -40,7 +40,6 @@ pub struct Config {
     // {wallet}
     pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
-    pub query_rounding: Uint128,
 }
 
 #[cw_serde]
@@ -66,7 +65,6 @@ pub struct InstantiateMsg {
     /// {wallet}
     pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
-    pub query_rounding: Uint128,
 }
 
 impl InstantiateCallback for InstantiateMsg {
@@ -78,7 +76,6 @@ pub enum ExecuteMsg {
     UpdateConfig {
         admin: Option<Addr>,
         dump_address: Option<Addr>,
-        query_rounding: Option<Uint128>,
         start_date: Option<u64>,
         end_date: Option<u64>,
         decay_start: Option<u64>,
@@ -95,10 +92,6 @@ pub enum ExecuteMsg {
         amount: Option<Uint128>,
         addresses: Vec<AddressProofPermit>,
         partial_tree: Vec<Binary>,
-        padding: Option<String>,
-    },
-    CreateViewingKey {
-        entropy: String,
         padding: Option<String>,
     },
     DisablePermitKey {

@@ -80,7 +80,6 @@ pub fn instantiate(
         merkle_root: msg.merkle_root,
         total_accounts: msg.total_accounts,
         claim_msg_plaintext: msg.claim_msg_plaintext,
-        query_rounding: msg.query_rounding,
     };
 
     config_w(deps.storage).save(&config)?;
@@ -101,7 +100,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             ExecuteMsg::UpdateConfig {
                 admin,
                 dump_address,
-                query_rounding: redeem_step_size,
                 start_date,
                 end_date,
                 ..
@@ -111,7 +109,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 &info,
                 admin,
                 dump_address,
-                redeem_step_size,
                 start_date,
                 end_date,
             ),
@@ -126,9 +123,6 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 eth_pubkey,
                 addresses,
             ),
-            ExecuteMsg::CreateViewingKey { entropy, .. } => {
-                try_create_viewing_key(deps, env, info, entropy)
-            }
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
