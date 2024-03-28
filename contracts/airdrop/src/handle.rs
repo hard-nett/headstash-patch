@@ -136,7 +136,7 @@ pub fn try_account(
             // setup a new account with addresses & eth_pubkey
             let mut account = Account::default();
 
-            // Validate permits
+            // this function will validate permits
             try_add_account_addresses(
                 deps.storage,
                 deps.api,
@@ -174,7 +174,7 @@ pub fn try_account(
             &config,
             &info.sender,
             &mut account,
-            addresses.clone(),
+            addresses,
             eth_pubkey,
         )?;
     }
@@ -406,8 +406,7 @@ pub fn try_add_account_addresses(
         if let Some(memo) = permit.memo.clone() {
             // unwrap the permits, coming from the message memo
             let params: AddressProofMsg = from_binary(&Binary::from_base64(&memo)?)?;
-
-            // Avoid verifying sender
+            // avoid verifying sender
             if &params.address != sender {
                 // Check permit legitimacy
                 validate_address_permit(storage, api, permit, &params, config.contract.clone())?;
@@ -494,10 +493,20 @@ pub fn inverse_normalizer(min: u64, x: u64, max: u64) -> Decimal {
 }
 
 // src: https://github.com/public-awesome/launchpad/blob/main/contracts/sg-eth-airdrop/src/claim_airdrop.rs#L85
-mod validation {
+pub mod validation {
     use super::*;
     use ethereum_verify::verify_ethereum_text;
-    use shade_protocol::c_std::StdError;
+    use shade_protocol::{airdrop::InstantiateMsg, c_std::StdError};
+
+    pub fn validate_instantiation_params(
+        info: MessageInfo,
+        msg: InstantiateMsg,
+    ) -> Result<(), StdError> {
+        // validate_airdrop_amount(msg.airdrop_amount)?;
+        validate_plaintext_msg(msg.claim_msg_plaintext)?;
+        // validate_instantiate_funds(info)?;
+        Ok(())
+    }
 
     pub fn compute_plaintext_msg(config: &Config, info: MessageInfo) -> String {
         str::replace(
@@ -549,6 +558,18 @@ mod validation {
                 msg: format!("Could not decode {eth_sig}"),
             }),
         }
+    }
+
+    pub fn validate_plaintext_msg(plaintext_msg: String) -> Result<(), StdError> {
+        if !plaintext_msg.contains("{wallet}") {
+            return Err(StdError::generic_err(
+                "Plaintext message must contain `{{wallet}}` string",
+            ));
+        }
+        if plaintext_msg.len() > 1000 {
+            return Err(StdError::generic_err("Plaintext message is too long"));
+        }
+        Ok(())
     }
 }
 

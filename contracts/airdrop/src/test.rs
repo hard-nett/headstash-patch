@@ -2,6 +2,7 @@
 pub mod tests {
     use crate::contract::{execute, query};
     use crate::{contract::instantiate, handle::inverse_normalizer};
+    use shade_protocol::query_authentication::permit::Permit;
     use shade_protocol::{
         airdrop::{ExecuteMsg, QueryMsg},
         c_std::testing::mock_dependencies_with_balance,
@@ -43,7 +44,7 @@ pub mod tests {
                 &Addr::unchecked("secret-terps"),
                 &"xyx-code-hash".to_string(),
             ),
-            airdrop_snip20_optional: Contract::new(
+            airdrop_2: Contract::new(
                 &Addr::unchecked("secret-thiol"),
                 &"xyz-code-hash".to_string(),
             ),
@@ -63,6 +64,7 @@ pub mod tests {
     }
 
     mod account {
+        use shade_protocol::{airdrop::account::EmptyMsg, c_std::to_binary};
 
         use super::*;
 
@@ -87,7 +89,7 @@ pub mod tests {
                     &Addr::unchecked("secret-terps"),
                     &"xyx-code-hash".to_string(),
                 ),
-                airdrop_snip20_optional: Contract::new(
+                airdrop_2: Contract::new(
                     &Addr::unchecked("secret-thiol"),
                     &"xyz-code-hash".to_string(),
                 ),
@@ -127,6 +129,11 @@ pub mod tests {
             let res = execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
             assert_eq!(0, res.messages.len());
         }
+
+        #[test]
+        fn claim_headstash() {}
+        #[test]
+        fn create_account() {}
     }
     #[test]
     fn test_s_i_e_q() {

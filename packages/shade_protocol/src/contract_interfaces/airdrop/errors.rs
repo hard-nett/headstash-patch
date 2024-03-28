@@ -43,7 +43,7 @@ impl CodeType for Error {
             }
             Error::InvalidDates => build_string("{} ({}) cannot happen {} {} ({})", context),
             Error::PermitContractMismatch => {
-                build_string("Permit is valid for {}, expected {}", context)
+                build_string("Permit is not valid for {}, expected {}", context)
             }
             Error::PermitKeyRevoked => build_string("Permit key {} revoked", context),
             Error::PermitRejected => build_string("Permit was rejected", context),
@@ -151,9 +151,6 @@ pub fn expected_memo() -> StdError {
     DetailedError::from_code(AIRDROP_TARGET, Error::ExpectedMemo, vec![]).to_error()
 }
 
-pub fn invalid_partial_tree() -> StdError {
-    DetailedError::from_code(AIRDROP_TARGET, Error::InvalidPartialTree, vec![]).to_error()
-}
 
 pub fn airdrop_not_started(start: &str, current: &str) -> StdError {
     DetailedError::from_code(

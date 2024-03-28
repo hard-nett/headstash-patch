@@ -3,15 +3,13 @@ resolver = "2"
 members = [
   # Packages
   "packages/shade_protocol",
-  # "packages/secretcli",
   "packages/multi_test",
   "packages/multi_derive",
   "packages/contract_derive",
   "packages/ethereum_verify",
 
-  # Network setups
+  # Secret Headstash Contract
   "contracts/airdrop",
-
 
   # Tools
   # "tools/doc2book",

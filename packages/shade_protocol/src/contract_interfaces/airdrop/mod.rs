@@ -47,10 +47,11 @@ pub struct InstantiateMsg {
     pub admin: Option<Addr>,
     // Where the decayed tokens will be dumped, if none then nothing happens
     pub dump_address: Option<Addr>,
+    // primary scrt-20 contract being distributed
     pub airdrop_token: Contract,
-    // An optional, second snip20 to be minted
-    pub airdrop_snip20_optional: Contract,
-    // Airdrop amount
+    // an optional, second snip20 to be minted
+    pub airdrop_2: Contract,
+    // total amount of airdrop
     pub airdrop_amount: Uint128,
     // The airdrop time limit
     pub start_date: Option<u64>,
@@ -81,17 +82,15 @@ pub enum ExecuteMsg {
         decay_start: Option<u64>,
         padding: Option<String>,
     },
-    /// * Creates or Updates an Account. 
-    /// * Uses the msg sender address as key to 
-    /// search if an account exist when a owner interacts.
+    /// * creates or updates an account. 
+    /// * use msg.sender addr as key to search if an account exist.
     /// * Stores an unverified eth_pubkey that will be used to verify
-    /// ownership of eth_sig provided when claiming headstash. 
+    ///   ownership of eth_sig provided when claiming headstash. 
     /// * 
     Account {
         eth_pubkey: String,
         amount: Option<Uint128>,
         addresses: Vec<AddressProofPermit>,
-        partial_tree: Vec<Binary>,
         padding: Option<String>,
     },
     DisablePermitKey {

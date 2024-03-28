@@ -1,6 +1,7 @@
 use crate::{
     handle::{
-        try_account, try_claim, try_create_viewing_key, try_disable_permit_key, try_set_viewing_key, try_update_config
+        try_account, try_claim, try_create_viewing_key, try_disable_permit_key,
+        try_set_viewing_key, try_update_config, validation::validate_instantiation_params,
     },
     query,
     state::{config_w, decay_claimed_w, total_claimed_w},
@@ -28,7 +29,7 @@ pub fn instantiate(
         None => env.block.time.seconds(),
         Some(date) => date,
     };
-
+    validate_instantiation_params(info.clone(), msg.clone())?;
     if let Some(end_date) = msg.end_date {
         if end_date < start_date {
             return Err(invalid_dates(
@@ -72,7 +73,7 @@ pub fn instantiate(
         contract: env.contract.address,
         dump_address: msg.dump_address,
         airdrop_snip20: msg.airdrop_token.clone(),
-        airdrop_snip20_optional: msg.airdrop_snip20_optional.clone(),
+        airdrop_snip20_optional: msg.airdrop_2.clone(),
         airdrop_amount: msg.airdrop_amount,
         start_date,
         end_date: msg.end_date,
@@ -103,26 +104,12 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 start_date,
                 end_date,
                 ..
-            } => try_update_config(
-                deps,
-                env,
-                &info,
-                admin,
-                dump_address,
-                start_date,
-                end_date,
-            ),
+            } => try_update_config(deps, env, &info, admin, dump_address, start_date, end_date),
             ExecuteMsg::Account {
                 eth_pubkey,
                 addresses,
                 ..
-            } => try_account(
-                deps,
-                &env,
-                &info,
-                eth_pubkey,
-                addresses,
-            ),
+            } => try_account(deps, &env, &info, eth_pubkey, addresses),
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
