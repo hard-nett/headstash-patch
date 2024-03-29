@@ -1,7 +1,5 @@
 use crate::state::{
     account_r,
-    // account_total_claimed_r,
-    // account_total_claimed_w,
     account_viewkey_w,
     account_w,
     address_in_account_w,
@@ -398,8 +396,6 @@ pub fn try_add_account_addresses(
     addresses: Vec<AddressProofPermit>,
     eth_pubkey: String,
 ) -> StdResult<()> {
-    // Setup the items to validate
-    let mut leaves_to_validate: Vec<(usize, [u8; 32])> = vec![];
 
     // Iterate addresses
     for permit in addresses.iter() {
@@ -437,12 +433,6 @@ pub fn try_add_account_addresses(
                     Ok(true)
                 },
             )?;
-
-            // Add account as a leaf
-            let leaf_hash =
-                Sha256::hash((params.address.to_string() + &params.amount.to_string()).as_bytes());
-            leaves_to_validate.push((params.index as usize, leaf_hash));
-
             // If valid then add to account array and sum total amount
             account.addresses.push(params.address);
             account.eth_pubkey = eth_pubkey.clone();
@@ -450,18 +440,6 @@ pub fn try_add_account_addresses(
             return Err(expected_memo());
         }
     }
-
-    // Need to sort by index in order for the proof to work
-    leaves_to_validate.sort_by_key(|item| item.0);
-
-    let mut indices: Vec<usize> = vec![];
-    let mut leaves: Vec<[u8; 32]> = vec![];
-
-    for leaf in leaves_to_validate.iter() {
-        indices.push(leaf.0);
-        leaves.push(leaf.1);
-    }
-
     Ok(())
 }
 

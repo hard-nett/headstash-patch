@@ -1,3 +1,9 @@
+//
+// testing-mnemonic-1:  indoor lend bachelor survey capital long venue name report fortune soldier course bring tiger unlock tree release swift van immune sketch attend upon rent
+// testing-mnemonic-2:  cement worth weekend silk aspect game balance speak warfare social swing permit engage expand ring soft fiscal exit race invest fragile brain drift economy
+//
+//
+//
 #[cfg(test)]
 pub mod tests {
     use crate::contract::{execute, query};
@@ -27,6 +33,7 @@ pub mod tests {
 
     const VIEWING_KEY: &str = "jUsTfOrTeStInG";
 
+    #[test]
     fn proper_initialization() {
         let mut deps = mock_dependencies();
         let info = mock_info(
@@ -48,7 +55,7 @@ pub mod tests {
                 &Addr::unchecked("secret-thiol"),
                 &"xyz-code-hash".to_string(),
             ),
-            airdrop_amount: Uint128::new(420),
+            airdrop_amount: Uint128::new(43476089028199),
             start_date: None,
             end_date: None,
             decay_start: None,
@@ -59,14 +66,12 @@ pub mod tests {
         };
 
         let res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
-
         assert_eq!(0, res.messages.len());
     }
 
     mod account {
-        use shade_protocol::{airdrop::account::EmptyMsg, c_std::to_binary};
-
         use super::*;
+        use shade_protocol::{airdrop::account::EmptyMsg, c_std::to_binary};
 
         #[test]
         fn set_viewing_key() {
@@ -103,7 +108,8 @@ pub mod tests {
                 claim_msg_plaintext: "{wallet}".to_string(),
             };
 
-            let _res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+            let res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+            assert_eq!(0, res.messages.len());
 
             // anyone can setup an account
             let info = mock_info(
@@ -119,7 +125,7 @@ pub mod tests {
                 padding: None,
             };
             let res = execute(deps.as_mut(), mock_env(), info.clone(), exec_msg).unwrap();
-            println!("{res:?}");
+            assert_eq!(0, res.messages.len());
 
             // test disabling the permit key
             let exec_msg = ExecuteMsg::DisablePermitKey {
@@ -131,7 +137,60 @@ pub mod tests {
         }
 
         #[test]
-        fn claim_headstash() {}
+        fn claim_headstash() {
+            let mut deps = mock_dependencies_with_balance(&[Coin {
+                denom: "earth".to_string(),
+                amount: Uint128::new(1000),
+            }]);
+            let info = mock_info(
+                "creator",
+                &[Coin {
+                    denom: "earth".to_string(),
+                    amount: Uint128::new(1000),
+                }],
+            );
+            let init_msg = InstantiateMsg {
+                admin: Some(Addr::unchecked("creator")),
+                dump_address: Some(Addr::unchecked("creator")),
+                airdrop_token: Contract::new(
+                    &Addr::unchecked("secret-terps"),
+                    &"xyx-code-hash".to_string(),
+                ),
+                airdrop_2: Contract::new(
+                    &Addr::unchecked("secret-thiol"),
+                    &"xyz-code-hash".to_string(),
+                ),
+                airdrop_amount: Uint128::from(840u128),
+                start_date: None,
+                end_date: None,
+                decay_start: None,
+                merkle_root: "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f"
+                    .to_string(),
+                total_accounts: 2u32,
+                claim_msg_plaintext: "{wallet}".to_string(),
+            };
+            let res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+            assert_eq!(0, res.messages.len());
+
+            // anyone can setup an account
+            let info = mock_info(
+                "anyone",
+                &[Coin {
+                    denom: "token".to_string(),
+                    amount: Uint128::new(420),
+                }],
+            );
+            // test setting a viewing key
+            let exec_msg = ExecuteMsg::SetViewingKey {
+                key: VIEWING_KEY.into(),
+                padding: None,
+            };
+            let res = execute(deps.as_mut(), mock_env(), info.clone(), exec_msg).unwrap();
+            assert_eq!(0, res.messages.len());
+
+            
+        }
+
         #[test]
         fn create_account() {}
     }
