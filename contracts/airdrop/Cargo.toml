@@ -1,6 +1,6 @@
 [package]
 name = "airdrop"
-version = "0.1.1"
+version = "0.1.0"
 authors = ["Guy Garcia <guysebastiangarcia@gmail.com>"]
 edition = "2018"
 
@@ -23,7 +23,7 @@ backtraces = ["shade-protocol/backtraces"]
 debug-print = ["shade-protocol/debug-print"]
 
 [dependencies]
-shade-protocol = { version = "0.1.0", path = "../../packages/shade_protocol", features = ["airdrop", "query_auth_impl",] }
+shade-protocol = { version = "0.1.0", path = "../../packages/shade_protocol", features = ["airdrop"] }
 ethereum-verify      =  { version = "0.1.0", path = "../../packages/ethereum_verify"}
 hex = "0.4"
 sha2                 = { version = "0.10.2", default-features = false }

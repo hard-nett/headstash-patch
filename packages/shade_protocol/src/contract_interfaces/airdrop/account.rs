@@ -1,12 +1,12 @@
-use crate::c_std::Uint128;
-use crate::c_std::{Addr, Api, StdResult};
 use crate::contract_interfaces::airdrop::errors::permit_rejected;
+use crate::c_std::Uint128;
+use crate::c_std::{Addr, StdResult, Api};
 use crate::query_authentication::{
     permit::{bech32_to_canonical, Permit},
     viewing_keys::ViewingKey,
 };
 
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde};
 
 #[cw_serde]
 pub struct Account {
@@ -40,7 +40,6 @@ pub struct AccountPermitMsg {
 pub struct FillerMsg {
     pub coins: Vec<String>,
     pub contract: String,
-    pub eth_pubkey: String,
     pub execute_msg: EmptyMsg,
     pub sender: String,
 }
@@ -52,7 +51,6 @@ impl Default for FillerMsg {
             contract: "".to_string(),
             sender: "".to_string(),
             execute_msg: EmptyMsg {},
-            eth_pubkey: "".to_string(),
         }
     }
 }
@@ -64,11 +62,7 @@ pub struct EmptyMsg {}
 // Used to prove ownership over IBC addresses
 pub type AddressProofPermit = Permit<FillerMsg>;
 
-pub fn authenticate_ownership(
-    api: &dyn Api,
-    permit: &AddressProofPermit,
-    permit_address: &str,
-) -> StdResult<()> {
+pub fn authenticate_ownership(api: &dyn Api, permit: &AddressProofPermit, permit_address: &str) -> StdResult<()> {
     let signer_address = permit
         .validate(api, Some("wasm/MsgExecuteContract".to_string()))?
         .as_canonical();

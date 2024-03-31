@@ -15,7 +15,6 @@ airdrop = ["dep:airdrop"]
 
 [dependencies]
 airdrop = { path = "../../contracts/airdrop", optional = true }
-
 shade-protocol = { path = "../shade_protocol", features = ["multi-test"] }
 
 [target.'cfg(not(target_arch="wasm32"))'.dependencies]

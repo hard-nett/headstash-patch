@@ -1,6 +1,3 @@
-
-pub mod oracles;
-
 #[cfg(feature = "snip20")]
 pub mod snip20;
 

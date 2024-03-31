@@ -45,11 +45,20 @@ macro_rules! generate_nested_schemas {
 
 pub fn main() {
     generate_schemas!(
-        airdrop
+        airdrop,
+        bonds,
+        governance,
+        peg_stability,
+        query_auth,
+        sky,
+        snip20
     );
 
     // generate_nested_schemas!(mint, liability_mint, mint, mint_router);
 
+    generate_nested_schemas!(oracles, oracle);
+
+    generate_nested_schemas!(dao, treasury_manager, treasury, scrt_staking);
 
     // generate_nested_schemas!(staking, snip20_staking);
 

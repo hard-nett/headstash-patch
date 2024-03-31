@@ -3,7 +3,7 @@ use std::collections::HashMap;
 
 #[derive(Clone, Eq, PartialEq, Hash)]
 pub enum SupportedContracts {
-    MockAdapter(usize),
+    Snip20(String),
 }
 
 pub type DeployedContracts = HashMap<SupportedContracts, Contract>;

@@ -14,7 +14,8 @@ name = "schemas"
 path = "src/schemas.rs"
 # Must have all of the contract_interfaces
 required-features = [
-   "airdrop",
+  "admin", "airdrop", "bonds", "dao", "dex", "governance-impl", "mint", "oracles",
+  "peg_stability", "query_auth", "sky", "snip20", "staking", "mint_router", "snip20_migration",
 ]
 
 [lib]

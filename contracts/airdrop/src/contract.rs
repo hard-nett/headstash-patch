@@ -1,7 +1,7 @@
 use crate::{
     handle::{
-        try_account, try_claim, try_create_viewing_key, try_disable_permit_key,
-        try_set_viewing_key, try_update_config, validation::validate_instantiation_params,
+        try_account, try_claim, try_claim_decay, try_disable_permit_key, try_set_viewing_key,
+        try_update_config,
     },
     query,
     state::{config_w, decay_claimed_w, total_claimed_w},
@@ -29,7 +29,7 @@ pub fn instantiate(
         None => env.block.time.seconds(),
         Some(date) => date,
     };
-    validate_instantiation_params(info.clone(), msg.clone())?;
+
     if let Some(end_date) = msg.end_date {
         if end_date < start_date {
             return Err(invalid_dates(
@@ -67,7 +67,6 @@ pub fn instantiate(
             return Err(StdError::generic_err("Decay must have an end date"));
         }
     }
-
     let config = Config {
         admin: msg.admin.unwrap_or(info.sender),
         contract: env.contract.address,
@@ -81,6 +80,8 @@ pub fn instantiate(
         merkle_root: msg.merkle_root,
         total_accounts: msg.total_accounts,
         claim_msg_plaintext: msg.claim_msg_plaintext,
+        max_amount: msg.max_amount,
+        query_rounding: msg.query_rounding,
     };
 
     config_w(deps.storage).save(&config)?;
@@ -88,7 +89,6 @@ pub fn instantiate(
     // Initialize claim amount
     total_claimed_w(deps.storage).save(&Uint128::zero())?;
 
-    // clawback function??
     decay_claimed_w(deps.storage).save(&false)?;
 
     Ok(Response::new())
@@ -101,15 +101,27 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             ExecuteMsg::UpdateConfig {
                 admin,
                 dump_address,
+                query_rounding: redeem_step_size,
                 start_date,
                 end_date,
+                decay_start: start_decay,
                 ..
-            } => try_update_config(deps, env, &info, admin, dump_address, start_date, end_date),
+            } => try_update_config(
+                deps,
+                env,
+                &info,
+                admin,
+                dump_address,
+                redeem_step_size,
+                start_date,
+                end_date,
+                start_decay,
+            ),
             ExecuteMsg::Account {
-                eth_pubkey,
                 addresses,
+                eth_pubkey,
                 ..
-            } => try_account(deps, &env, &info, eth_pubkey, addresses),
+            } => try_account(deps, &env, &info, addresses, eth_pubkey),
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
@@ -121,7 +133,7 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 proof,
                 ..
             } => try_claim(deps, &env, &info, amount, eth_pubkey, eth_sig, proof),
-            ExecuteMsg::ClaimDecay { .. } => crate::handle::try_claim_decay(deps, &env, &info),
+            ExecuteMsg::ClaimDecay { .. } => try_claim_decay(deps, &env, &info),
         },
         RESPONSE_BLOCK_SIZE,
     )
@@ -134,14 +146,15 @@ pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
             QueryMsg::Config {} => to_binary(&query::config(deps)?),
             QueryMsg::Dates { current_date } => to_binary(&query::dates(deps, current_date)?),
             QueryMsg::TotalClaimed {} => to_binary(&query::total_claimed(deps)?),
-            QueryMsg::Account { permit, eth_pubkey } => {
-                to_binary(&query::account(deps, permit, eth_pubkey)?)
-            }
+            QueryMsg::Account {
+                permit,
+                current_date,
+            } => to_binary(&query::account(deps, permit, current_date)?),
             QueryMsg::AccountWithKey {
                 account,
                 key,
-                eth_pubkey,
-            } => to_binary(&query::account_with_key(deps, account, key, eth_pubkey)?),
+                current_date,
+            } => to_binary(&query::account_with_key(deps, account, key, current_date)?),
         },
         RESPONSE_BLOCK_SIZE,
     )

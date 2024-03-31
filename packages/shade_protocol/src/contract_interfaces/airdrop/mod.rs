@@ -4,7 +4,10 @@ pub mod errors;
 
 use crate::{
     c_std::{Addr, Binary, Uint128},
-    contract_interfaces::airdrop::account::{AccountPermit, AddressProofPermit},
+    contract_interfaces::airdrop::{
+        account::{AccountPermit, AddressProofPermit},
+        claim_info::RequiredTask,
+    },
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
 
@@ -18,10 +21,10 @@ pub struct Config {
     pub contract: Addr,
     // Where the decayed tokens will be dumped, if none then nothing happens
     pub dump_address: Option<Addr>,
-    // The snip20 to be minted
+    // The snip20 to be mint,
     pub airdrop_snip20: Contract,
     // An optional, second snip20 to be minted
-    pub airdrop_snip20_optional: Contract,
+    pub airdrop_snip20_optional: Option<Contract>,
     // Airdrop amount
     pub airdrop_amount: Uint128,
     // Required tasks
@@ -39,7 +42,10 @@ pub struct Config {
     pub total_accounts: u32,
     // {wallet}
     pub claim_msg_plaintext: String,
+    // max possible reward amount; used to prevent collision possibility
+    pub max_amount: Uint128,
     // Protects from leaking user information by limiting amount detail
+    pub query_rounding: Uint128,
 }
 
 #[cw_serde]
@@ -50,7 +56,7 @@ pub struct InstantiateMsg {
     // primary scrt-20 contract being distributed
     pub airdrop_token: Contract,
     // an optional, second snip20 to be minted
-    pub airdrop_2: Contract,
+    pub airdrop_2: Option<Contract>,
     // total amount of airdrop
     pub airdrop_amount: Uint128,
     // The airdrop time limit
@@ -59,6 +65,8 @@ pub struct InstantiateMsg {
     pub end_date: Option<u64>,
     // Starts to decay at this date
     pub decay_start: Option<u64>,
+    // max possible reward amount; used to prevent collision possibility
+    pub max_amount: Uint128,
     // Base64 encoded version of the tree root
     pub merkle_root: String,
     // Root height
@@ -66,6 +74,7 @@ pub struct InstantiateMsg {
     /// {wallet}
     pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
+    pub query_rounding: Uint128,
 }
 
 impl InstantiateCallback for InstantiateMsg {
@@ -77,20 +86,15 @@ pub enum ExecuteMsg {
     UpdateConfig {
         admin: Option<Addr>,
         dump_address: Option<Addr>,
+        query_rounding: Option<Uint128>,
         start_date: Option<u64>,
         end_date: Option<u64>,
         decay_start: Option<u64>,
         padding: Option<String>,
     },
-    /// * creates or updates an account. 
-    /// * use msg.sender addr as key to search if an account exist.
-    /// * Stores an unverified eth_pubkey that will be used to verify
-    ///   ownership of eth_sig provided when claiming headstash. 
-    /// * 
     Account {
-        eth_pubkey: String,
-        amount: Option<Uint128>,
         addresses: Vec<AddressProofPermit>,
+        eth_pubkey: String,
         padding: Option<String>,
     },
     DisablePermitKey {
@@ -111,6 +115,9 @@ pub enum ExecuteMsg {
     ClaimDecay {
         padding: Option<String>,
     },
+    // CreateViewingKey {
+    //     key: String,
+    // },
 }
 
 impl ExecuteCallback for ExecuteMsg {
@@ -134,6 +141,7 @@ pub enum ExecuteAnswer {
     SetViewingKey {
         status: ResponseStatus,
     },
+
     Claim {
         status: ResponseStatus,
         claimed: bool,
@@ -143,7 +151,6 @@ pub enum ExecuteAnswer {
     ClaimDecay {
         status: ResponseStatus,
     },
-    CreateViewingKey { key: String },
 }
 
 #[cw_serde]
@@ -155,12 +162,12 @@ pub enum QueryMsg {
     TotalClaimed {},
     Account {
         permit: AccountPermit,
-        eth_pubkey: String,
+        current_date: Option<u64>,
     },
     AccountWithKey {
         account: Addr,
         key: String,
-        eth_pubkey: String,
+        current_date: Option<u64>,
     },
 }
 
@@ -176,6 +183,8 @@ pub enum QueryAnswer {
     Dates {
         start: u64,
         end: Option<u64>,
+        decay_start: Option<u64>,
+        decay_factor: Option<Uint128>,
     },
     TotalClaimed {
         claimed: Uint128,
