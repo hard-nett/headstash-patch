@@ -1,35 +1,10 @@
-import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, fromUtf8, MsgExecuteContract, MsgExecuteContractResponse, fromBase64, toBase64 } from "secretjs";
-import * as fs from "fs";
+import { MsgExecuteContract } from "secretjs";
 import { encodeJsonToB64 } from "@shadeprotocol/shadejs";
-
-// wallet
-const wallet = new Wallet("<YOUR_MNEMONIC_SEED>");
-const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-
-// snip-20
-const scrt20codeId = 5697;
-const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
-const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
-const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
-
-// airdrop contract
-const scrtHeadstashCodeId = 6294;
-const scrtHeadstashCodeHash = "8f1816b524f9246e421503c9e764fbfdec615e2c52f258286ffebc09798bbe6e";
-const secretHeadstashContractAddr = "secret1r8hpc5uvykea0hzc92nlfrn60rwlc02rsa4fyv";
-
+import { scrtHeadstashCodeHash, secretHeadstashContractAddr, secretjs, txEncryptionSeed, wallet } from "./main.js";
 
 const viewingKey = "eretskeretjableret"
 const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
-
-
-// network client
-const secretjs = new SecretNetworkClient({
-  chainId: "pulsar-3",
-  url: "https://api.pulsar.scrttestnet.com",
-  wallet: wallet,
-  walletAddress: wallet.address,
-  txEncryptionSeed: txEncryptionSeed
-});
+const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b" 
 
 // filler message of AddressProofPermit
 const fillerMsg = {
@@ -41,7 +16,6 @@ const fillerMsg = {
 // data to be encoded in memo of AddressProofPermit
 const addrProofMsg = {
   address: wallet.address,
-  amount: 420,
   contract: secretHeadstashContractAddr,
   index: 0,
   key: "eretskeretjableret"
@@ -72,7 +46,8 @@ const createAccount = new MsgExecuteContract({
           },
         }
       ],
-      eth_pubkey: eth_pubkey
+      eth_pubkey: eth_pubkey,
+      eth_sig: eth_sig.slice(2),
     }
   },
   sent_funds: [], // optional

@@ -6,11 +6,8 @@
     * [Admin](#Admin)
         * Messages
             * [UpdateConfig](#UpdateConfig)
-            * [AddTasks](#AddTasks)
             * [ClaimDecay](#ClaimDecay)
     * [Admin](#Admin)
-        * Messages
-            * [CompleteTask](#CompleteTask)
     * [User](#User)
         * Messages
             * [Account](#Account)
@@ -89,6 +86,7 @@ Drains the decayed amount of airdrop into the specified dump_address
 |--------------|----------------------------------------------------|-----------------------------------------------------------|----------|
 | addresses    | Array of [AddressProofPermit](#AddressProofPermit) | Proof that the user owns those addresses                  | no       |
 | eth_pubkey   | string                                             | Key included in headstash distribution                    | no       |
+| eth_sig      | string                                             | Signature from eth_pubkey of msg.sender, for merkle tree verification                    | no       |
 | padding      | string                                             | Allows for enforcing constant length messages             | yes      |
 
 ##### Response
@@ -98,7 +96,8 @@ Drains the decayed amount of airdrop into the specified dump_address
     "status": "success",
     "claimed": "boolean",
     "addresses": ["claimed addresses"],
-    "eth_pubkey": "eth Pubkey"
+    "eth_pubkey": "eth_pubkey",
+    "eth_sig": "eth_sig",
   }
 }
 ```
@@ -165,23 +164,6 @@ Gets the contract's config
 }
 ```
 
-## Dates
-Get the contracts airdrop timeframe, can calculate the decay factor if a time is given
-##### Request
-| Name         | Type | Description                     | optional |
-|--------------|------|---------------------------------|----------|
-| current_date | u64  | The current time in UNIX format | yes      |
-```json
-{
-  "dates": {
-    "start": "Airdrop start",
-    "end": "Airdrop end",
-    "decay_start": "Airdrop start of decay",
-    "decay_factor": "Decay percentage"
-  }
-}
-```
-
 ## TotalClaimed
 Shows the total amount of the token that has been claimed. If airdrop hasn't ended then it'll just show an estimation.
 ##### Request
@@ -205,7 +187,8 @@ Get the account's information
   "account": {
     "claimed": "boolean",
     "addresses": ["claimed addresses"],
-    "eth_pubkey": ""
+    "eth_pubkey": "",
+    "eth_sig": "",
   }
 }
 ```
@@ -223,7 +206,8 @@ Get the account's information using a viewing key
   "account_with_key": {
     "claimed": "boolean",
     "addresses": ["claimed addresses"],
-    "eth_pubkey": ""
+    "eth_pubkey": "",
+    "eth_sig": "",
   }
 }
 ```

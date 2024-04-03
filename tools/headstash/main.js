@@ -1,31 +1,34 @@
 import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, fromUtf8, MsgExecuteContractResponse } from "secretjs";
 import * as fs from "fs";
-import {encodedAddrProofMsg} from "./account"
 
 // wallet
-const wallet = new Wallet("<YOUR_MNEMONIC_SEED>");
-const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+export const chain_id = "pulsar-3";
+export const wallet = new Wallet("<YOUR_MNEMONIC_SEED>");
+export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
+export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
-const scrt20codeId = 5697;
-const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
-const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
-const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
+export const scrt20codeId = 5697;
+export const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
+export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
+export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-const scrtHeadstashCodeId = 6294;
-const scrtHeadstashCodeHash = "8f1816b524f9246e421503c9e764fbfdec615e2c52f258286ffebc09798bbe6e";
-const secretHeadstashContractAddr = "secret1r8hpc5uvykea0hzc92nlfrn60rwlc02rsa4fyv";
+export const scrtHeadstashCodeId = 6294;
+export const scrtHeadstashCodeHash = "8f1816b524f9246e421503c9e764fbfdec615e2c52f258286ffebc09798bbe6e";
+export const secretHeadstashContractAddr = "secret1r8hpc5uvykea0hzc92nlfrn60rwlc02rsa4fyv";
+export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
-const secretjs = new SecretNetworkClient({
-  chainId: "pulsar-3",
+// signing client 
+export const secretjs = new SecretNetworkClient({
+  chainId: chain_id,
   url: "https://api.pulsar.scrttestnet.com",
   wallet: wallet,
   walletAddress: wallet.address,
   txEncryptionSeed: txEncryptionSeed
 });
 
+// stores contract, prints code hash & code id
 let upload_contract = async () => {
   let tx = await secretjs.tx.compute.storeCode(
     {
@@ -45,10 +48,11 @@ let upload_contract = async () => {
   );
 
   console.log("codeId: ", codeId);
-  // contract hash, useful for contract composition
   const contractCodeHash = (await secretjs.query.compute.codeHashByCodeId({ code_id: codeId })).code_hash;
   console.log(`Contract hash: ${contractCodeHash}`);
 }
+
+// initialize a new headstash contract
 let instantiate_headstash_contract = async () => {
   let initMsg = {
     admin: wallet.address,
@@ -66,7 +70,7 @@ let instantiate_headstash_contract = async () => {
     end_date: null,
     decay_start: null,
     max_amount: "420",
-    merkle_root: "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f",
+    merkle_root: merkle_root,
     total_accounts: 2,
     claim_msg_plaintext: "{wallet}",
     query_rounding: "1"
@@ -93,6 +97,8 @@ let instantiate_headstash_contract = async () => {
 
   console.log(contractAddress);
 }
+
+// initiates a new snip-20 
 let instantiate_contract = async (name, synbol, supported_denom) => {
   const initMsg = {
     name: "Terp Network Gas Token",
