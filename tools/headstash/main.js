@@ -1,21 +1,22 @@
 import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, fromUtf8, MsgExecuteContractResponse } from "secretjs";
 import * as fs from "fs";
+import {encodedAddrProofMsg} from "./account"
 
-const wallet = new Wallet(
-  "goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have"
-);
-
+// wallet
+const wallet = new Wallet("<YOUR_MNEMONIC_SEED>");
 const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-const contract_wasm = fs.readFileSync("./airdrop.wasm");
+const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
+// snip-20
 const scrt20codeId = 5697;
 const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
-const scrtHeadstashCodeId = 6282;
-const scrtHeadstashCodeHash = "f87c7817a43ca68c99fcf425eb1f255393df813c9955501d89a24d09b9967512";
-
 const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
 const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
-const secretHeadstashContractAddr = "secret1l97vzuf8lsr0kdvepxqut9w4mf2v49vh35zqxp";
+
+// airdrop contract
+const scrtHeadstashCodeId = 6294;
+const scrtHeadstashCodeHash = "8f1816b524f9246e421503c9e764fbfdec615e2c52f258286ffebc09798bbe6e";
+const secretHeadstashContractAddr = "secret1r8hpc5uvykea0hzc92nlfrn60rwlc02rsa4fyv";
 
 const secretjs = new SecretNetworkClient({
   chainId: "pulsar-3",
@@ -50,8 +51,8 @@ let upload_contract = async () => {
 }
 let instantiate_headstash_contract = async () => {
   let initMsg = {
-    admin: "secret13uazul89dp0lypuxcz0upygpjy0ftdah4lnrs4",
-    dump_address: "secret13uazul89dp0lypuxcz0upygpjy0ftdah4lnrs4",
+    admin: wallet.address,
+    dump_address: wallet.address,
     airdrop_token: {
       address: secretTerpContractAddr,
       code_hash: scrt20CodeHash
@@ -64,9 +65,11 @@ let instantiate_headstash_contract = async () => {
     start_date: null,
     end_date: null,
     decay_start: null,
+    max_amount: "420",
     merkle_root: "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f",
     total_accounts: 2,
-    claim_msg_plaintext: "{wallet}"
+    claim_msg_plaintext: "{wallet}",
+    query_rounding: "1"
   };
 
   let tx = await secretjs.tx.compute.instantiateContract(
@@ -130,6 +133,8 @@ if (args.length < 1) {
   upload_contract(args[1]);
 } else if (args[0] === '-h') {
   instantiate_headstash_contract();
+} else if (args[0] === '-a') {
+
 } else if (args[0] === '-i') {
   if (args.length < 4) {
     console.error('Usage: -i name symbol [supported_denoms]');

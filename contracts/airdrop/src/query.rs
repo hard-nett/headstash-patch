@@ -50,7 +50,7 @@ fn account_information(
     let account = account_r(deps.storage).load(account_address.to_string().as_bytes())?;
 
     // Calculate eligible tasks
-    let config = config_r(deps.storage).load()?;
+    // let config = config_r(deps.storage).load()?;
 
     // Check if eth address has claimed
     let claim_state = eth_pubkey_claim_r(deps.storage).may_load(account.eth_pubkey.as_bytes())?;
@@ -59,6 +59,7 @@ fn account_information(
         claimed: claim_state.unwrap(),
         addresses: account.addresses,
         eth_pubkey: account.eth_pubkey,
+        eth_sig: account.eth_sig,
     })
 }
 

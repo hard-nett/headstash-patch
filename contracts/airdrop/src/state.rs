@@ -17,6 +17,7 @@ pub static DECAY_CLAIMED_KEY: &[u8] = b"decay_claimed";
 pub static CLAIM_STATUS_KEY: &[u8] = b"claim_status_";
 pub static REWARD_IN_ACCOUNT_KEY: &[u8] = b"reward_in_account";
 pub static ETH_PUBKEY_IN_ACCOUNT_KEY: &[u8] = b"eth_pubkey_in_account";
+pub static ETH_SIG_IN_ACCOUNT_KEY: &[u8] = b"eth_sig_in_account";
 pub static ETH_PUBKEY: &str = "eth_pubkey";
 pub static ACCOUNTS_KEY: &[u8] = b"accounts";
 pub static TOTAL_CLAIMED_KEY: &[u8] = b"total_claimed";
@@ -86,6 +87,14 @@ pub fn eth_pubkey_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
 
 pub fn eth_pubkey_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
     bucket(storage, ETH_PUBKEY_IN_ACCOUNT_KEY)
+}
+// Is address added to an account
+pub fn eth_sig_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
+    bucket_read(storage, ETH_SIG_IN_ACCOUNT_KEY)
+}
+
+pub fn eth_sig_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
+    bucket(storage, ETH_SIG_IN_ACCOUNT_KEY)
 }
 
 // Eth pubkey claimed

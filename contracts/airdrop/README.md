@@ -248,7 +248,6 @@ NOTE: The parameters must be in order
 
 ```json
 {
-  "coins": [],
   "contract": "",
   "execute_msg": "",
   "sender": ""

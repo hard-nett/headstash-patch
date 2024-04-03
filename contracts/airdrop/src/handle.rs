@@ -1,7 +1,7 @@
 use crate::state::{
     account_r, account_viewkey_w, account_w, address_in_account_w, claim_status_w, config_r,
-    config_w, decay_claimed_w, eth_pubkey_claim_r, eth_pubkey_claim_w, revoke_permit,
-    total_claimed_r, total_claimed_w, validate_address_permit,
+    config_w, decay_claimed_w, eth_pubkey_claim_r, eth_pubkey_claim_w, eth_pubkey_in_account_w,
+    eth_sig_in_account_w, revoke_permit, total_claimed_r, total_claimed_w, validate_address_permit,
 };
 use hex::decode_to_slice;
 // use rs_merkle::{algorithms::Sha256, Hasher, MerkleProof};
@@ -11,14 +11,14 @@ use shade_protocol::{
         account::{Account, AccountKey, AddressProofMsg, AddressProofPermit},
         errors::{
             address_already_in_account, airdrop_ended, airdrop_not_started, already_claimed,
-            claim_too_high, decay_claimed, decay_not_set, expected_memo, failed_verification,
-            invalid_dates, not_admin, nothing_to_claim, wrong_length,
+            decay_claimed, decay_not_set, expected_memo, failed_verification, invalid_dates,
+            not_admin, nothing_to_claim, wrong_length,
         },
         Config, ExecuteAnswer,
     },
     c_std::{
-        ensure_eq, from_binary, to_binary, Addr, Api, Binary, Decimal, DepsMut, Env, MessageInfo,
-        Response, StdResult, Storage, Uint128,
+        ensure_eq, from_binary, to_binary, Addr, Api, BankMsg, Binary, CosmosMsg, Decimal, DepsMut,
+        Env, MessageInfo, Response, StdResult, Storage, Uint128,
     },
     query_authentication::viewing_keys::ViewingKey,
     snip20::helpers::send_msg,
@@ -144,6 +144,7 @@ pub fn try_account(
     info: &MessageInfo,
     addresses: Vec<AddressProofPermit>,
     eth_pubkey: String,
+    eth_sig: String,
 ) -> StdResult<Response> {
     // Check if airdrop active
     let config = config_r(deps.storage).load()?;
@@ -171,6 +172,7 @@ pub fn try_account(
                 &mut account,
                 addresses.clone(),
                 eth_pubkey.clone(),
+                eth_sig.clone(),
             )?;
 
             // we setup an unchecked eth_pubkey for now. We will verify this eth_pubkey during
@@ -199,7 +201,8 @@ pub fn try_account(
             &info.sender,
             &mut account,
             addresses.clone(),
-            eth_pubkey.clone(),
+            eth_pubkey,
+            eth_sig.clone(),
         )?;
     }
 
@@ -251,8 +254,6 @@ pub fn try_claim(
     env: &Env,
     info: &MessageInfo,
     amount: Uint128,
-    eth_pubkey: String,
-    eth_sig: String,
     proof: Vec<String>,
 ) -> StdResult<Response> {
     let config = config_r(deps.storage).load()?;
@@ -269,7 +270,7 @@ pub fn try_claim(
         &deps,
         info.clone(),
         account.eth_pubkey.clone(), // uses the saved account eth_pubkey
-        eth_sig,
+        account.eth_sig.clone(),
         config.clone(),
     )?;
 
@@ -305,21 +306,38 @@ pub fn try_claim(
     total_claimed_w(deps.storage)
         .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
 
-    Ok(Response::new()
-        .set_data(to_binary(&ExecuteAnswer::Claim {
-            status: ResponseStatus::Success,
-            claimed: eth_pubkey_claim_r(deps.storage).load(eth_pubkey.as_bytes())?,
-            addresses: account.addresses,
-            eth_pubkey: account.eth_pubkey,
-        })?)
-        .add_message(send_msg(
+    let mut msgs: Vec<CosmosMsg> = vec![];
+
+    let hs1 = send_msg(
+        sender.clone(),
+        redeem_amount.into(),
+        None,
+        None,
+        None,
+        &config.airdrop_snip20,
+    )?;
+    msgs.push(hs1);
+
+    if !config.airdrop_snip20_optional.is_none() {
+        let hs2 = send_msg(
             sender.clone(),
             redeem_amount.into(),
             None,
             None,
             None,
-            &config.airdrop_snip20,
-        )?))
+            &config.airdrop_snip20_optional.unwrap(),
+        )?;
+        msgs.push(hs2);
+    };
+
+    Ok(Response::new()
+        .set_data(to_binary(&ExecuteAnswer::Claim {
+            status: ResponseStatus::Success,
+            claimed: eth_pubkey_claim_r(deps.storage).load(account.eth_pubkey.as_bytes())?,
+            addresses: account.addresses,
+            eth_pubkey: account.eth_pubkey,
+        })?)
+        .add_messages(msgs))
 }
 
 pub fn try_claim_decay(deps: DepsMut, env: &Env, _info: &MessageInfo) -> StdResult<Response> {
@@ -339,17 +357,34 @@ pub fn try_claim_decay(deps: DepsMut, env: &Env, _info: &MessageInfo) -> StdResu
 
                 let total_claimed = total_claimed_r(deps.storage).load()?;
                 let send_total = config.airdrop_amount.checked_sub(total_claimed)?;
-                let messages = vec![send_msg(
+                let mut msgs: Vec<CosmosMsg> = vec![];
+
+                let hs1 = send_msg(
                     dump_address.clone(),
                     send_total.into(),
                     None,
                     None,
                     None,
                     &config.airdrop_snip20,
-                )?];
+                )?;
+
+                msgs.push(hs1);
+
+                if !config.airdrop_snip20_optional.is_none() {
+                    let hs2 = send_msg(
+                        dump_address.clone(),
+                        send_total.into(),
+                        None,
+                        None,
+                        None,
+                        &config.airdrop_snip20_optional.unwrap(),
+                    )?;
+                    msgs.push(hs2);
+                };
 
                 return Ok(Response::new()
-                    .set_data(to_binary(&ExecuteAnswer::ClaimDecay { status: Success })?));
+                    .set_data(to_binary(&ExecuteAnswer::ClaimDecay { status: Success })?)
+                    .add_messages(msgs));
             }
         }
     }
@@ -391,10 +426,8 @@ pub fn try_add_account_addresses(
     account: &mut Account,
     addresses: Vec<AddressProofPermit>,
     eth_pubkey: String,
+    eth_sig: String,
 ) -> StdResult<()> {
-    // Setup the items to validate
-    let mut leaves_to_validate: Vec<(usize, [u8; 32])> = vec![];
-
     // Iterate addresses
     for permit in addresses.iter() {
         if let Some(memo) = permit.memo.clone() {
@@ -404,14 +437,6 @@ pub fn try_add_account_addresses(
             if &params.address != sender {
                 // Check permit legitimacy
                 validate_address_permit(storage, api, permit, &params, config.contract.clone())?;
-            }
-
-            // Check that airdrop amount does not exceed maximum
-            if params.amount > config.max_amount {
-                return Err(claim_too_high(
-                    params.amount.to_string().as_str(),
-                    config.max_amount.to_string().as_str(),
-                ));
             }
 
             // Update address if its not in an account
@@ -426,8 +451,33 @@ pub fn try_add_account_addresses(
                 },
             )?;
 
+            // Update eth_pubkey if its not in an account
+            eth_pubkey_in_account_w(storage).update(
+                eth_pubkey.to_string().as_bytes(),
+                |state| -> StdResult<bool> {
+                    if state.is_some() {
+                        return Err(address_already_in_account(&eth_pubkey.as_str()));
+                    }
+
+                    Ok(true)
+                },
+            )?;
+            // Update eth_sig if its not in an account
+            eth_sig_in_account_w(storage).update(
+                eth_sig.to_string().as_bytes(),
+                |state| -> StdResult<bool> {
+                    if state.is_some() {
+                        return Err(address_already_in_account(&eth_pubkey.as_str()));
+                    }
+
+                    Ok(true)
+                },
+            )?;
+
             // If valid then add to account array and sum total amount
             account.addresses.push(params.address);
+            account.eth_pubkey = eth_pubkey.to_string();
+            account.eth_sig = eth_sig.to_string();
         } else {
             return Err(expected_memo());
         }

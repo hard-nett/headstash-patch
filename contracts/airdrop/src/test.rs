@@ -306,9 +306,7 @@ pub mod tests {
     fn memo_deserialization() {
         let expected_memo = AddressProofMsg {
             address: Addr::unchecked("secret19q7h2zy8mgesy3r39el5fcm986nxqjd7cgylrz".to_string()),
-            amount: Uint128::new(1000000u128),
             contract: Addr::unchecked("secret1sr62lehajgwhdzpmnl65u35rugjrgznh2572mv".to_string()),
-            index: 10,
             key: "account-creation-permit".to_string(),
         };
 

@@ -13,7 +13,7 @@ rm ./$(1).wasm
 endef
 
 CONTRACTS = \
-		airdrop \
+		airdrop 
 
 PACKAGES = shade_protocol contract_harness cosmwasm_math_compat ethereum_verify
 

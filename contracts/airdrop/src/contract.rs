@@ -120,19 +120,18 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             ExecuteMsg::Account {
                 addresses,
                 eth_pubkey,
+                eth_sig,
                 ..
-            } => try_account(deps, &env, &info, addresses, eth_pubkey),
+            } => try_account(deps, &env, &info, addresses, eth_pubkey, eth_sig),
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
             ExecuteMsg::SetViewingKey { key, .. } => try_set_viewing_key(deps, &env, &info, key),
             ExecuteMsg::Claim {
                 amount,
-                eth_pubkey,
-                eth_sig,
                 proof,
                 ..
-            } => try_claim(deps, &env, &info, amount, eth_pubkey, eth_sig, proof),
+            } => try_claim(deps, &env, &info, amount, proof),
             ExecuteMsg::ClaimDecay { .. } => try_claim_decay(deps, &env, &info),
         },
         RESPONSE_BLOCK_SIZE,

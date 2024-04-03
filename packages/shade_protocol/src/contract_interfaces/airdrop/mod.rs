@@ -3,11 +3,8 @@ pub mod claim_info;
 pub mod errors;
 
 use crate::{
-    c_std::{Addr, Binary, Uint128},
-    contract_interfaces::airdrop::{
-        account::{AccountPermit, AddressProofPermit},
-        claim_info::RequiredTask,
-    },
+    c_std::{Addr, Uint128},
+    contract_interfaces::airdrop::account::{AccountPermit, AddressProofPermit},
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
 
@@ -95,6 +92,7 @@ pub enum ExecuteMsg {
     Account {
         addresses: Vec<AddressProofPermit>,
         eth_pubkey: String,
+        eth_sig: String,
         padding: Option<String>,
     },
     DisablePermitKey {
@@ -107,8 +105,6 @@ pub enum ExecuteMsg {
     },
     Claim {
         amount: Uint128,
-        eth_pubkey: String,
-        eth_sig: String,
         proof: Vec<String>,
         padding: Option<String>,
     },
@@ -193,6 +189,7 @@ pub enum QueryAnswer {
         claimed: bool,
         addresses: Vec<Addr>,
         eth_pubkey: String,
+        eth_sig: String,
     },
 }
 
