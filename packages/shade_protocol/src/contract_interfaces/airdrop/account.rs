@@ -48,8 +48,8 @@ impl Default for FillerMsg {
     fn default() -> Self {
         Self {
             contract: "".to_string(),
-            sender: "".to_string(),
             execute_msg: EmptyMsg {},
+            sender: "".to_string(),
         }
     }
 }
