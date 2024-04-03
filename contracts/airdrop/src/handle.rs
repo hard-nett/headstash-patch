@@ -157,10 +157,12 @@ pub fn try_account(
 
     // These variables are setup to facilitate updating
     let updating_account: bool;
+    // let old_claim_amount: Uint128;
 
     let mut account = match account_r(deps.storage).may_load(sender.as_bytes())? {
         None => {
             updating_account = false;
+            // old_claim_amount = Uint128::zero();
             let mut account = Account::default();
 
             // Validate permits
@@ -175,25 +177,21 @@ pub fn try_account(
                 eth_sig.clone(),
             )?;
 
-            // we setup an unchecked eth_pubkey for now. We will verify this eth_pubkey during
-            // the claim msg, and will update to verified eth_pubkey.
-            // sets the accounts eth_pubkey claim status to false. note we always check claim function when checking
-            // the signed msg with the stored address, never both or isolated;
-            // (to avoid contract panic, sender.clone is required for reading the account details,
-            // prevents ability to determine if a eth_pubkey not yours has claimed)*
+            // account_total_claimed_w(deps.storage).save(sender.as_bytes(), &Uint128::zero())?;
             claim_status_w(deps.storage, 0).save(sender.as_bytes(), &false)?;
 
             account
         }
         Some(acc) => {
             updating_account = true;
+            // old_claim_amount = acc.total_claimable;
             acc
         }
     };
 
     // Update account after claim to calculate difference
     if updating_account {
-        // Validate permits
+        // TODO: verify eth_pubkey & eth_sig from this function.
         try_add_account_addresses(
             deps.storage,
             deps.api,
@@ -439,6 +437,14 @@ pub fn try_add_account_addresses(
                 validate_address_permit(storage, api, permit, &params, config.contract.clone())?;
             }
 
+            // // Check that airdrop amount does not exceed maximum
+            // if params.amount > config.max_amount {
+            //     return Err(claim_too_high(
+            //         params.amount.to_string().as_str(),
+            //         config.max_amount.to_string().as_str(),
+            //     ));
+            // }
+
             // Update address if its not in an account
             address_in_account_w(storage).update(
                 params.address.to_string().as_bytes(),
@@ -450,6 +456,11 @@ pub fn try_add_account_addresses(
                     Ok(true)
                 },
             )?;
+
+            // // Add account as a leaf
+            // let leaf_hash =
+            //     Sha256::hash((params.address.to_string() + &params.amount.to_string()).as_bytes());
+            // leaves_to_validate.push((params.index as usize, leaf_hash));
 
             // Update eth_pubkey if its not in an account
             eth_pubkey_in_account_w(storage).update(
@@ -481,6 +492,34 @@ pub fn try_add_account_addresses(
         } else {
             return Err(expected_memo());
         }
+
+        // // Need to sort by index in order for the proof to work
+        // leaves_to_validate.sort_by_key(|item| item.0);
+
+        // let mut indices: Vec<usize> = vec![];
+        // let mut leaves: Vec<[u8; 32]> = vec![];
+
+        // for leaf in leaves_to_validate.iter() {
+        //     indices.push(leaf.0);
+        //     leaves.push(leaf.1);
+        // }
+
+        // // Convert partial tree from base64 to binary
+        // let mut partial_tree_binary: Vec<[u8; 32]> = vec![];
+        // for node in partial_tree.iter() {
+        //     let mut arr: [u8; 32] = Default::default();
+        //     arr.clone_from_slice(node.as_slice());
+        //     partial_tree_binary.push(arr);
+        // }
+
+        // // Prove that user is in airdrop
+        // let proof = MerkleProof::<Sha256>::new(partial_tree_binary);
+        // // Convert to a fixed length array without messing up the contract
+        // let mut root: [u8; 32] = Default::default();
+        // root.clone_from_slice(config.merkle_root.as_slice());
+        // if !proof.verify(root, &indices, &leaves, config.total_accounts as usize) {
+        //     return Err(invalid_partial_tree());
+        // }
     }
     Ok(())
 }

@@ -215,9 +215,8 @@ Get the account's information using a viewing key
 ## AddressProofPermit
 This is a structure used to prove that the user has permission to query that address's information (when querying account info).
 This is also used to prove that the user owns that address (when creating/updating accounts) and the given amount is in the airdrop.
-This permit is written differently from the rest since its made taking into consideration many of Terra's limitations compared to Keplr's flexibility.
 
-NOTE: The parameters must be in order
+NOTE: The parameters must be in order.
 
 [How to sign](https://github.com/securesecrets/shade/blob/77abdc70bc645d97aee7de5eb9a2347d22da425f/packages/shade_protocol/src/signature/mod.rs#L100)
 #### Structure

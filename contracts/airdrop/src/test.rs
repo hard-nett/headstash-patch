@@ -281,7 +281,7 @@ pub mod tests {
                     "h/RpG1eKzN03oId0GvN7TSxoHOUibjmqPEQ1E+ZWh+BvghPL99lBj4L3BKpjjsaRtXX3lexO7ztafLKBVtq4xA==").unwrap(),
             },
             account_number: None,
-            memo: Some("eyJhbW91bnQiOiIxMDAwMDAwMCIsImluZGV4IjoxMCwia2V5IjoiYWNjb3VudC1jcmVhdGlvbi1wZXJtaXQifQ==".to_string())
+            memo: Some("eyJhZGRyZXNzIjoic2VjcmV0MTlxN2gyenk4bWdlc3kzcjM5ZWw1ZmNtOTg2bnhxamQ3Y2d5bHJ6IiwiY29udHJhY3QiOiJzZWNyZXQxc3I2MmxlaGFqZ3doZHpwbW5sNjV1MzVydWdqcmd6bmgyNTcybXYiLCJrZXkiOiJhY2NvdW50LWNyZWF0aW9uLXBlcm1pdCJ9".to_string())
         };
 
         let deps = mock_dependencies();
@@ -312,7 +312,7 @@ pub mod tests {
 
         let deserialized_memo: AddressProofMsg = from_binary(
             &Binary::from_base64(
-                &"eyJhZGRyZXNzIjoic2VjcmV0MTlxN2gyenk4bWdlc3kzcjM5ZWw1ZmNtOTg2bnhxamQ3Y2d5bHJ6IiwiYW1vdW50IjoiMTAwMDAwMCIsImNvbnRyYWN0Ijoic2VjcmV0MXNyNjJsZWhhamd3aGR6cG1ubDY1dTM1cnVnanJnem5oMjU3Mm12IiwiaW5kZXgiOjEwLCJrZXkiOiJhY2NvdW50LWNyZWF0aW9uLXBlcm1pdCJ9"
+                &"eyJhZGRyZXNzIjoic2VjcmV0MTlxN2gyenk4bWdlc3kzcjM5ZWw1ZmNtOTg2bnhxamQ3Y2d5bHJ6IiwiY29udHJhY3QiOiJzZWNyZXQxc3I2MmxlaGFqZ3doZHpwbW5sNjV1MzVydWdqcmd6bmgyNTcybXYiLCJrZXkiOiJhY2NvdW50LWNyZWF0aW9uLXBlcm1pdCJ9"
                     .to_string()).unwrap()).unwrap();
 
         assert_eq!(deserialized_memo, expected_memo)

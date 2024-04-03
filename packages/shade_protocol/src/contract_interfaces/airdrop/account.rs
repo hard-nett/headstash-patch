@@ -39,6 +39,7 @@ pub struct AccountPermitMsg {
 #[remain::sorted]
 #[cw_serde]
 pub struct FillerMsg {
+    pub coins: Vec<String>,
     pub contract: String,
     pub execute_msg: EmptyMsg,
     pub sender: String,
@@ -47,6 +48,7 @@ pub struct FillerMsg {
 impl Default for FillerMsg {
     fn default() -> Self {
         Self {
+            coins: vec![],
             contract: "".to_string(),
             sender: "".to_string(),
             execute_msg: EmptyMsg {},
