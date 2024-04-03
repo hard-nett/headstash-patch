@@ -3,7 +3,7 @@ import * as fs from "fs";
 
 // wallet
 export const chain_id = "pulsar-3";
-export const wallet = new Wallet("<YOUR_MNEMONIC_SEED>");
+export const wallet = new Wallet("");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
 export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
@@ -14,9 +14,9 @@ export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we
 export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6294;
-export const scrtHeadstashCodeHash = "8f1816b524f9246e421503c9e764fbfdec615e2c52f258286ffebc09798bbe6e";
-export const secretHeadstashContractAddr = "secret1r8hpc5uvykea0hzc92nlfrn60rwlc02rsa4fyv";
+export const scrtHeadstashCodeId = 6410;
+export const scrtHeadstashCodeHash = "1b037fcd711ebf057cecd11103c6a5feee65e8e4c6ace281560531344d01aaec";
+export const secretHeadstashContractAddr = "secret17vftlyw20j08hsey6u7r6vl98pwejlqhdrpnhm";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // signing client 

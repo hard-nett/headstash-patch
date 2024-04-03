@@ -50,8 +50,8 @@ impl Default for FillerMsg {
         Self {
             coins: vec![],
             contract: "".to_string(),
-            sender: "".to_string(),
             execute_msg: EmptyMsg {},
+            sender: "".to_string(),
         }
     }
 }

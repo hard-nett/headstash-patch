@@ -1,4 +1,4 @@
-import { MsgExecuteContract } from "secretjs";
+import { MsgExecuteContract, toUtf8 } from "secretjs";
 import { encodeJsonToB64 } from "@shadeprotocol/shadejs";
 import { scrtHeadstashCodeHash, secretHeadstashContractAddr, secretjs, txEncryptionSeed, wallet } from "./main.js";
 
@@ -17,12 +17,21 @@ const fillerMsg = {
 const addrProofMsg = {
   address: wallet.address,
   contract: secretHeadstashContractAddr,
-  index: 0,
-  key: "eretskeretjableret"
+  key: 'eretskeretjableret'
 }
 // Convert JSON object to JSON string
-const addrProofMsgJson = JSON.stringify(addrProofMsg);
-const encoded = encodeJsonToB64(addrProofMsgJson);
+let jsonString = JSON.stringify(addrProofMsg, (key, value) => {
+  if (typeof value === 'string') {
+      return value.replace(/\\/g, '');
+  }
+  return value;
+});
+const encoded = encodeJsonToB64(jsonString);
+
+
+
+console.log("AddrProofMsg:", jsonString);
+console.log("Base64 String of AddrProofMsg:", encoded)
 
 // signature documentate as defined here: 
 // https://github.com/securesecrets/shade/blob/77abdc70bc645d97aee7de5eb9a2347d22da425f/packages/shade_protocol/src/signature/mod.rs#L100
@@ -35,15 +44,18 @@ const createAccount = new MsgExecuteContract({
     account: {
       addresses: [
         {
-          memo: encoded,
           params: fillerMsg,
           signature: {
             pub_key: {
               type: "tendermint/PubKeySecp256k1",
               value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO",
             },
-            signature: "tTjK3Mf4dpQrSQT2hsqXn+pgeXhVjQhw2EXP5N50uhBJ0kpV9IS5uyfo+PHvB20CVHMwux9leaByfXI3T6PD6A=="
+            signature: "tTjK3Mf4dpQrSQT2hsqXn+pgeXhVjQhw2EXP5N50uhBJ0kpV9IS5uyfo+PHvB20CVHMwux9leaByfXI3T6PD6A==",
           },
+          account_number: null,
+          chain_id: null,
+          sequence: null,
+          memo: encoded,
         }
       ],
       eth_pubkey: eth_pubkey,
