@@ -1,12 +1,20 @@
 use crate::{
     handle::decay_factor,
     state::{
-        account_r, account_viewkey_r, config_r, decay_claimed_r, eth_pubkey_claim_r, total_claimed_r, validate_account_permit
+        account_r,
+        account_total_claimed_r,
+        account_viewkey_r,
+        claim_status_r,
+        config_r,
+        decay_claimed_r,
+        total_claimed_r,
+        validate_account_permit,
     },
 };
 use shade_protocol::{
     airdrop::{
         account::{AccountKey, AccountPermit},
+        claim_info::RequiredTask,
         errors::invalid_viewing_key,
         QueryAnswer,
     },
@@ -50,16 +58,49 @@ fn account_information(
     let account = account_r(deps.storage).load(account_address.to_string().as_bytes())?;
 
     // Calculate eligible tasks
-    // let config = config_r(deps.storage).load()?;
+    let config = config_r(deps.storage).load()?;
+    let mut finished_tasks: Vec<RequiredTask> = vec![];
+    let mut completed_percentage = Uint128::zero();
+    let mut unclaimed_percentage = Uint128::zero();
+    for (index, task) in config.task_claim.iter().enumerate() {
+        // Check if task has been completed
+        let state =
+            claim_status_r(deps.storage, index).may_load(account_address.to_string().as_bytes())?;
 
-    // Check if eth address has claimed
-    let claim_state = eth_pubkey_claim_r(deps.storage).may_load(account.eth_pubkey.as_bytes())?;
+        match state {
+            // Ignore if none
+            None => {}
+            Some(claimed) => {
+                finished_tasks.push(task.clone());
+                if !claimed {
+                    unclaimed_percentage += task.percent;
+                } else {
+                    completed_percentage += task.percent;
+                }
+            }
+        }
+    }
+
+    let mut unclaimed: Uint128;
+
+    if unclaimed_percentage == Uint128::new(100u128) {
+        unclaimed = account.total_claimable;
+    } else {
+        unclaimed =
+            unclaimed_percentage.multiply_ratio(account.total_claimable, Uint128::new(100u128));
+    }
+
+    if let Some(time) = current_date {
+        unclaimed = unclaimed * decay_factor(time, &config);
+    }
 
     Ok(QueryAnswer::Account {
-        claimed: claim_state.unwrap(),
+        total: account.total_claimable,
+        claimed: account_total_claimed_r(deps.storage)
+            .load(account_address.to_string().as_bytes())?,
+        unclaimed,
+        finished_tasks,
         addresses: account.addresses,
-        eth_pubkey: account.eth_pubkey,
-        eth_sig: account.eth_sig,
     })
 }
 

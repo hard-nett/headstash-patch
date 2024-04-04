@@ -8,7 +8,7 @@
 target/
 
 # Testing configs
-*.json
+packages/tools/headstash/package-lock.json
 
 # Code coverage stuff
 *.profraw

@@ -3,8 +3,11 @@ pub mod claim_info;
 pub mod errors;
 
 use crate::{
-    c_std::{Addr, Uint128},
-    contract_interfaces::airdrop::account::{AccountPermit, AddressProofPermit},
+    c_std::{Addr, Binary, Uint128},
+    contract_interfaces::airdrop::{
+        account::{AccountPermit, AddressProofPermit},
+        claim_info::RequiredTask,
+    },
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
 
@@ -18,14 +21,14 @@ pub struct Config {
     pub contract: Addr,
     // Where the decayed tokens will be dumped, if none then nothing happens
     pub dump_address: Option<Addr>,
-    // The snip20 to be mint,
+    // The snip20 to be minted
     pub airdrop_snip20: Contract,
     // An optional, second snip20 to be minted
     pub airdrop_snip20_optional: Option<Contract>,
     // Airdrop amount
     pub airdrop_amount: Uint128,
     // Required tasks
-    // pub task_claim: Vec<RequiredTask>,
+    pub task_claim: Vec<RequiredTask>,
     // Checks if airdrop has started / ended
     pub start_date: u64,
     // Airdrop stops at end date if there is one
@@ -34,7 +37,7 @@ pub struct Config {
     pub decay_start: Option<u64>,
     // This is necessary to validate the airdrop information
     // tree root
-    pub merkle_root: String,
+    pub merkle_root: Binary,
     // tree height
     pub total_accounts: u32,
     // {wallet}
@@ -50,24 +53,27 @@ pub struct InstantiateMsg {
     pub admin: Option<Addr>,
     // Where the decayed tokens will be dumped, if none then nothing happens
     pub dump_address: Option<Addr>,
-    // primary scrt-20 contract being distributed
     pub airdrop_token: Contract,
+    // Airdrop amount
+    pub airdrop_amount: Uint128,
     // an optional, second snip20 to be minted
     pub airdrop_2: Option<Contract>,
-    // total amount of airdrop
-    pub airdrop_amount: Uint128,
     // The airdrop time limit
     pub start_date: Option<u64>,
     // Can be set to never end
     pub end_date: Option<u64>,
     // Starts to decay at this date
     pub decay_start: Option<u64>,
-    // max possible reward amount; used to prevent collision possibility
-    pub max_amount: Uint128,
     // Base64 encoded version of the tree root
-    pub merkle_root: String,
+    pub merkle_root: Binary,
     // Root height
     pub total_accounts: u32,
+    // Max possible reward amount
+    pub max_amount: Uint128,
+    // Default gifted amount
+    pub default_claim: Uint128,
+    // The task related claims
+    pub task_claim: Vec<RequiredTask>,
     /// {wallet}
     pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
@@ -89,10 +95,19 @@ pub enum ExecuteMsg {
         decay_start: Option<u64>,
         padding: Option<String>,
     },
+    AddTasks {
+        tasks: Vec<RequiredTask>,
+        padding: Option<String>,
+    },
+    CompleteTask {
+        address: Addr,
+        padding: Option<String>,
+    },
     Account {
         addresses: Vec<AddressProofPermit>,
         eth_pubkey: String,
         eth_sig: String,
+        partial_tree: Vec<Binary>,
         padding: Option<String>,
     },
     DisablePermitKey {
@@ -104,16 +119,11 @@ pub enum ExecuteMsg {
         padding: Option<String>,
     },
     Claim {
-        amount: Uint128,
-        proof: Vec<String>,
         padding: Option<String>,
     },
     ClaimDecay {
         padding: Option<String>,
     },
-    // CreateViewingKey {
-    //     key: String,
-    // },
 }
 
 impl ExecuteCallback for ExecuteMsg {
@@ -125,11 +135,23 @@ pub enum ExecuteAnswer {
     UpdateConfig {
         status: ResponseStatus,
     },
+    AddTask {
+        status: ResponseStatus,
+    },
+    CompleteTask {
+        status: ResponseStatus,
+    },
     Account {
         status: ResponseStatus,
+        // Total eligible
+        total: Uint128,
+        // Total claimed
+        claimed: Uint128,
+        finished_tasks: Vec<RequiredTask>,
+        // Addresses claimed
         addresses: Vec<Addr>,
         eth_pubkey: String,
-        claimed: bool,
+        eth_sig: String,
     },
     DisablePermitKey {
         status: ResponseStatus,
@@ -137,12 +159,17 @@ pub enum ExecuteAnswer {
     SetViewingKey {
         status: ResponseStatus,
     },
-
     Claim {
         status: ResponseStatus,
-        claimed: bool,
+        // Total eligible
+        total: Uint128,
+        // Total claimed
+        claimed: Uint128,
+        finished_tasks: Vec<RequiredTask>,
+        // Addresses claimed
         addresses: Vec<Addr>,
         eth_pubkey: String,
+        eth_sig: String,
     },
     ClaimDecay {
         status: ResponseStatus,
@@ -186,16 +213,21 @@ pub enum QueryAnswer {
         claimed: Uint128,
     },
     Account {
-        claimed: bool,
+        // Total eligible
+        total: Uint128,
+        // Total claimed
+        claimed: Uint128,
+        // Total unclaimed but available
+        unclaimed: Uint128,
+        finished_tasks: Vec<RequiredTask>,
+        // Addresses claimed
         addresses: Vec<Addr>,
-        eth_pubkey: String,
-        eth_sig: String,
     },
 }
 
 #[cw_serde]
 pub struct AccountVerification {
-    pub eth_pubkey: String,
+    // pub eth_pubkey: String,
     pub account: Addr,
     pub claimed: bool,
 }

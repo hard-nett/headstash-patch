@@ -6,8 +6,11 @@
     * [Admin](#Admin)
         * Messages
             * [UpdateConfig](#UpdateConfig)
+            * [AddTasks](#AddTasks)
             * [ClaimDecay](#ClaimDecay)
-    * [Admin](#Admin)
+    * [Task_Admin](#Task_Admin)
+        * Messages
+            * [CompleteTask](#CompleteTask)
     * [User](#User)
         * Messages
             * [Account](#Account)
@@ -33,7 +36,6 @@ Contract responsible to handle snip20 airdrop
 | admin          | String        | New contract owner; SHOULD be a valid bech32 address                       | yes      |
 | dump_address   | String        | Where the decay amount will be sent                                        | yes      |
 | airdrop_token  | Contract      | The token that will be airdropped                                          | no       |
-| airdrop_2      | Contract      | The token that will be airdropped                                          | yes      |
 | airdrop_amount | String        | Total airdrop amount to be claimed                                         | no       |
 | start_date     | u64           | When the airdrop starts in UNIX time                                       | yes      |
 | end_date       | u64           | When the airdrop ends in UNIX time                                         | yes      |
@@ -41,7 +43,8 @@ Contract responsible to handle snip20 airdrop
 | merkle_root    | String        | Base 64 encoded merkle root of the airdrop data tree                       | no       |
 | total_accounts | u32           | Total accounts in airdrop (needed for merkle proof)                        | no       |
 | max_amount     | String        | Used to limit the user permit amounts (lowers exploit possibility)         | no       |
-| claim_msg_plaintext      | String | {wallet}                                                                 | no       |
+| default_claim  | String        | The default amount to be gifted regardless of tasks                        | no       |
+| task_claim     | RequiredTasks | The amounts per tasks to gift                                              | no       |
 | query_rounding | string        | To prevent leaking information, total claimed is rounded off to this value | no       |
 
 ##Admin
@@ -61,6 +64,29 @@ Updates the given values
 | decay_start    | u64    | When the airdrop decay starts in UNIX time           | yes      |
 | padding        | string | Allows for enforcing constant length messages        | yes      |
 
+#### AddTasks
+Adds another task that can unlock the users claim percentage, total task percentage cannot exceed 100%
+##### Task
+| Name    | Type   | Description                                      | optional |
+|---------|--------|--------------------------------------------------|----------|
+| address | String | The address that will grant the task to accounts | no       |
+| percent | string | The percent to be unlocked when completed        | no       |
+
+##### Request
+| Name    | Type   | Description                                   | optional |
+|---------|--------|-----------------------------------------------|----------|
+| tasks   | Tasks  | The new tasks to be added                     | no       |
+| padding | string | Allows for enforcing constant length messages | yes      |
+
+##### Response
+```json
+{
+  "add_tasks": {
+    "status": "success"
+  }
+}
+```
+
 #### ClaimDecay
 Drains the decayed amount of airdrop into the specified dump_address
 
@@ -73,7 +99,26 @@ Drains the decayed amount of airdrop into the specified dump_address
 }
 ```
 
+##Task Admin
+
 ### Messages
+
+#### CompleteTask
+Complete that address' tasks for a given user
+##### Request
+| Name    | Type   | Description                                   | optional |
+|---------|--------|-----------------------------------------------|----------|
+| address | String | The address that completed the task           | no       |
+| padding | string | Allows for enforcing constant length messages | yes      |
+
+##### Response
+```json
+{
+  "complete_task": {
+    "status": "success"
+  }
+}
+```
 
 ##User
 
@@ -85,8 +130,7 @@ Drains the decayed amount of airdrop into the specified dump_address
 | Name         | Type                                               | Description                                               | optional |
 |--------------|----------------------------------------------------|-----------------------------------------------------------|----------|
 | addresses    | Array of [AddressProofPermit](#AddressProofPermit) | Proof that the user owns those addresses                  | no       |
-| eth_pubkey   | string                                             | Key included in headstash distribution                    | no       |
-| eth_sig      | string                                             | Signature from eth_pubkey of msg.sender, for merkle tree verification                    | no       |
+| partial_tree | Array of string                                    | An array of nodes that serve as a proof for the addresses | no       |
 | padding      | string                                             | Allows for enforcing constant length messages             | yes      |
 
 ##### Response
@@ -94,10 +138,10 @@ Drains the decayed amount of airdrop into the specified dump_address
 {
   "account": {
     "status": "success",
-    "claimed": "boolean",
-    "addresses": ["claimed addresses"],
-    "eth_pubkey": "eth_pubkey",
-    "eth_sig": "eth_sig",
+    "total": "Total airdrop amount",
+    "claimed": "Claimed amount",
+    "finished_tasks": "All of the finished tasks",
+    "addresses": ["claimed addresses"]
   }
 }
 ```
@@ -146,6 +190,7 @@ Claim the user's available claimable amount
     "status": "success",
     "total": "Total airdrop amount",
     "claimed": "Claimed amount",
+    "finished_tasks": "All of the finished tasks",
     "addresses": ["claimed addresses"]
   }
 }
@@ -160,6 +205,23 @@ Gets the contract's config
 {
   "config": {
     "config": "Contract's config"
+  }
+}
+```
+
+## Dates
+Get the contracts airdrop timeframe, can calculate the decay factor if a time is given
+##### Request
+| Name         | Type | Description                     | optional |
+|--------------|------|---------------------------------|----------|
+| current_date | u64  | The current time in UNIX format | yes      |
+```json
+{
+  "dates": {
+    "start": "Airdrop start",
+    "end": "Airdrop end",
+    "decay_start": "Airdrop start of decay",
+    "decay_factor": "Decay percentage"
   }
 }
 ```
@@ -185,10 +247,11 @@ Get the account's information
 ```json
 {
   "account": {
-    "claimed": "boolean",
-    "addresses": ["claimed addresses"],
-    "eth_pubkey": "",
-    "eth_sig": "",
+    "total": "Total airdrop amount",
+    "claimed": "Claimed amount",
+    "unclaimed": "Amount available to claim",
+    "finished_tasks": "All of the finished tasks",
+    "addresses": ["claimed addresses"]
   }
 }
 ```
@@ -204,10 +267,11 @@ Get the account's information using a viewing key
 ```json
 {
   "account_with_key": {
-    "claimed": "boolean",
-    "addresses": ["claimed addresses"],
-    "eth_pubkey": "",
-    "eth_sig": "",
+    "total": "Total airdrop amount",
+    "claimed": "Claimed amount",
+    "unclaimed": "Amount available to claim",
+    "finished_tasks": "All of the finished tasks",
+    "addresses": ["claimed addresses"]
   }
 }
 ```
@@ -215,8 +279,9 @@ Get the account's information using a viewing key
 ## AddressProofPermit
 This is a structure used to prove that the user has permission to query that address's information (when querying account info).
 This is also used to prove that the user owns that address (when creating/updating accounts) and the given amount is in the airdrop.
+This permit is written differently from the rest since its made taking into consideration many of Terra's limitations compared to Keplr's flexibility.
 
-NOTE: The parameters must be in order.
+NOTE: The parameters must be in order
 
 [How to sign](https://github.com/securesecrets/shade/blob/77abdc70bc645d97aee7de5eb9a2347d22da425f/packages/shade_protocol/src/signature/mod.rs#L100)
 #### Structure
@@ -231,6 +296,7 @@ NOTE: The parameters must be in order.
 
 ```json
 {
+  "coins": [],
   "contract": "",
   "execute_msg": "",
   "sender": ""

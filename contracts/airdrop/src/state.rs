@@ -16,13 +16,14 @@ pub static CONFIG_KEY: &[u8] = b"config";
 pub static DECAY_CLAIMED_KEY: &[u8] = b"decay_claimed";
 pub static CLAIM_STATUS_KEY: &[u8] = b"claim_status_";
 pub static REWARD_IN_ACCOUNT_KEY: &[u8] = b"reward_in_account";
-pub static ETH_PUBKEY_IN_ACCOUNT_KEY: &[u8] = b"eth_pubkey_in_account";
-pub static ETH_SIG_IN_ACCOUNT_KEY: &[u8] = b"eth_sig_in_account";
-pub static ETH_PUBKEY: &str = "eth_pubkey";
 pub static ACCOUNTS_KEY: &[u8] = b"accounts";
 pub static TOTAL_CLAIMED_KEY: &[u8] = b"total_claimed";
+pub static USER_TOTAL_CLAIMED_KEY: &[u8] = b"user_total_claimed";
 pub static ACCOUNT_PERMIT_KEY: &str = "account_permit_key";
 pub static ACCOUNT_VIEWING_KEY: &[u8] = b"account_viewing_key";
+pub static ETH_PUBKEY_IN_ACCOUNT_KEY: &str = "eth_pubkey_in_account";
+pub static ETH_SIG_IN_ACCOUNT_KEY: &str = "eth_sig_in_account";
+pub static ETH_PUBKEY: &str = "eth_pubkey";
 
 pub fn config_w(storage: &mut dyn Storage) -> Singleton<Config> {
     singleton(storage, CONFIG_KEY)
@@ -80,32 +81,13 @@ pub fn total_claimed_w(storage: &mut dyn Storage) -> Singleton<Uint128> {
     singleton(storage, TOTAL_CLAIMED_KEY)
 }
 
-// Is address added to an account
-pub fn eth_pubkey_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
-    bucket_read(storage, ETH_PUBKEY_IN_ACCOUNT_KEY)
+// Total account claimed
+pub fn account_total_claimed_r(storage: &dyn Storage) -> ReadonlyBucket<Uint128> {
+    bucket_read(storage, USER_TOTAL_CLAIMED_KEY)
 }
 
-pub fn eth_pubkey_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
-    bucket(storage, ETH_PUBKEY_IN_ACCOUNT_KEY)
-}
-// Is address added to an account
-pub fn eth_sig_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
-    bucket_read(storage, ETH_SIG_IN_ACCOUNT_KEY)
-}
-
-pub fn eth_sig_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
-    bucket(storage, ETH_SIG_IN_ACCOUNT_KEY)
-}
-
-// Eth pubkey claimed
-pub fn eth_pubkey_claim_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
-    let key = ETH_PUBKEY.to_string();
-    bucket_read(storage, key.as_bytes())
-}
-
-pub fn eth_pubkey_claim_w(storage: &mut dyn Storage) -> Bucket<bool> {
-    let key = ETH_PUBKEY.to_string();
-    bucket(storage, key.as_bytes())
+pub fn account_total_claimed_w(storage: &mut dyn Storage) -> Bucket<Uint128> {
+    bucket(storage, USER_TOTAL_CLAIMED_KEY)
 }
 
 // Account viewing key
@@ -132,6 +114,38 @@ pub fn revoke_permit(storage: &mut dyn Storage, account: String, permit_key: Str
     account_permit_key_w(storage, account)
         .save(permit_key.as_bytes(), &false)
         .unwrap();
+}
+
+// Is address added to an account
+pub fn eth_pubkey_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
+    let key = ETH_PUBKEY_IN_ACCOUNT_KEY.to_string();
+    bucket_read(storage, key.as_bytes())
+}
+
+pub fn eth_pubkey_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
+    let key = ETH_PUBKEY_IN_ACCOUNT_KEY.to_string();
+    bucket(storage, key.as_bytes())
+}
+// Is address added to an account
+pub fn eth_sig_in_account_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
+    let key = ETH_SIG_IN_ACCOUNT_KEY.to_string();
+    bucket_read(storage, key.as_bytes())
+}
+
+pub fn eth_sig_in_account_w(storage: &mut dyn Storage) -> Bucket<bool> {
+    let key = ETH_SIG_IN_ACCOUNT_KEY.to_string();
+    bucket(storage, key.as_bytes())
+}
+
+// Eth pubkey claimed
+pub fn eth_pubkey_claim_r(storage: &dyn Storage) -> ReadonlyBucket<bool> {
+    let key = ETH_PUBKEY.to_string();
+    bucket_read(storage, key.as_bytes())
+}
+
+pub fn eth_pubkey_claim_w(storage: &mut dyn Storage) -> Bucket<bool> {
+    let key = ETH_PUBKEY.to_string();
+    bucket(storage, key.as_bytes())
 }
 
 pub fn is_permit_revoked(

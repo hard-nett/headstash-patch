@@ -1,27 +1,30 @@
 use crate::contract_interfaces::airdrop::errors::permit_rejected;
-use crate::c_std::{Addr, Api, StdResult};
+use crate::c_std::Uint128;
+use crate::c_std::{Addr, StdResult, Api};
 use crate::query_authentication::{
     permit::{bech32_to_canonical, Permit},
     viewing_keys::ViewingKey,
 };
 
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde};
 
 #[cw_serde]
 pub struct Account {
     pub addresses: Vec<Addr>,
+    pub total_claimable: Uint128,
     pub eth_pubkey: String,
     pub eth_sig: String,
-    pub claimed: bool,
+    // pub claimed: bool,
 }
 
 impl Default for Account {
     fn default() -> Self {
         Self {
             addresses: vec![],
+            total_claimable: Uint128::zero(),
             eth_pubkey: "".to_string(),
             eth_sig: "".to_string(),
-            claimed: false,
+            // claimed: false,
         }
     }
 }
@@ -50,8 +53,8 @@ impl Default for FillerMsg {
         Self {
             coins: vec![],
             contract: "".to_string(),
-            execute_msg: EmptyMsg {},
             sender: "".to_string(),
+            execute_msg: EmptyMsg {},
         }
     }
 }
@@ -63,11 +66,7 @@ pub struct EmptyMsg {}
 // Used to prove ownership over IBC addresses
 pub type AddressProofPermit = Permit<FillerMsg>;
 
-pub fn authenticate_ownership(
-    api: &dyn Api,
-    permit: &AddressProofPermit,
-    permit_address: &str,
-) -> StdResult<()> {
+pub fn authenticate_ownership(api: &dyn Api, permit: &AddressProofPermit, permit_address: &str) -> StdResult<()> {
     let signer_address = permit
         .validate(api, Some("wasm/MsgExecuteContract".to_string()))?
         .as_canonical();
@@ -84,8 +83,12 @@ pub fn authenticate_ownership(
 pub struct AddressProofMsg {
     // Address is necessary since we have other network permits present
     pub address: Addr,
+    // Reward amount
+    pub amount: Uint128,
     // Used to prevent permits from being used elsewhere
     pub contract: Addr,
+    // Index of the address in the leaves array
+    pub index: u32,
     // Used to identify permits
     pub key: String,
 }
