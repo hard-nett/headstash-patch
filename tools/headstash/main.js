@@ -14,9 +14,9 @@ export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we
 export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6410;
-export const scrtHeadstashCodeHash = "1b037fcd711ebf057cecd11103c6a5feee65e8e4c6ace281560531344d01aaec";
-export const secretHeadstashContractAddr = "secret17vftlyw20j08hsey6u7r6vl98pwejlqhdrpnhm";
+export const scrtHeadstashCodeId = 6459;
+export const scrtHeadstashCodeHash = "f494eda77c7816c4882d0dfde8bbd35b87975e427ea74315ed96c051d5674f82";
+export const secretHeadstashContractAddr = "secret1u4ndydgspk0ff6ttvs0kq7utdhcmqec405jtqg";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // signing client 
@@ -65,13 +65,18 @@ let instantiate_headstash_contract = async () => {
       address: secretThiolContractAddr,
       code_hash: scrt20CodeHash
     },
-    airdrop_amount: "840",
     start_date: null,
     end_date: null,
     decay_start: null,
-    max_amount: "420",
     merkle_root: merkle_root,
+    airdrop_amount: "840",
     total_accounts: 2,
+    max_amount: "420",
+    default_claim: "50",
+    task_claim: [{
+      address: secretHeadstashContractAddr,
+      percent: "50",
+    }],
     claim_msg_plaintext: "{wallet}",
     query_rounding: "1"
   };
