@@ -14,9 +14,9 @@ export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we
 export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6459;
+export const scrtHeadstashCodeId = 6469;
 export const scrtHeadstashCodeHash = "f494eda77c7816c4882d0dfde8bbd35b87975e427ea74315ed96c051d5674f82";
-export const secretHeadstashContractAddr = "secret1u4ndydgspk0ff6ttvs0kq7utdhcmqec405jtqg";
+export const secretHeadstashContractAddr = "secret1ykf6ysxy25qddd62c4yjyw0wn60uxtvvrm7xjn";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // signing client 
