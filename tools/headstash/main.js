@@ -3,9 +3,9 @@ import * as fs from "fs";
 
 // wallet
 export const chain_id = "pulsar-3";
-export const wallet = new Wallet("");
+export const wallet = new Wallet("goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+// export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
 export const scrt20codeId = 5697;
@@ -141,7 +141,7 @@ const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error('Invalid option. Please provide -s to store the contract, or -i to instantiate the contract, followed by expected values [name] [symbol] [ibc-hash].');
 } else if (args[0] === '-s') {
-  upload_contract(args[1]);
+  // upload_contract(args[1]);
 } else if (args[0] === '-h') {
   instantiate_headstash_contract();
 } else if (args[0] === '-a') {

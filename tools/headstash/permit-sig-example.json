@@ -1,0 +1,20 @@
+    {
+     "account_number": "0",
+     "chain_id": "90u-4",
+     "fee": {
+         "amount": [{
+             "amount": "0",
+             "denom": "uscrt"
+         }],
+         "gas": "1"
+     },
+     "memo": "",
+     "msgs": [{
+         "type": "signature_proof",
+         "value": {
+             "address": "secret1sc0cldtf7nznvy6sxfdvngj953e6s0w90w9r4v",
+             "some_number": "10"
+         }
+     }],
+     "sequence": "0"
+    }
