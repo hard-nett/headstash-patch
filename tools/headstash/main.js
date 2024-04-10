@@ -1,11 +1,12 @@
-import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, fromUtf8, MsgExecuteContractResponse } from "secretjs";
+import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, MsgExecuteContract, fromUtf8, MsgExecuteContractResponse } from "secretjs";
+import {create_account} from './account.js'
 import * as fs from "fs";
 
 // wallet
 export const chain_id = "pulsar-3";
 export const wallet = new Wallet("goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-// export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
 export const scrt20codeId = 5697;
@@ -14,10 +15,18 @@ export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we
 export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6469;
+export const scrtHeadstashCodeId = 6559;
 export const scrtHeadstashCodeHash = "f494eda77c7816c4882d0dfde8bbd35b87975e427ea74315ed96c051d5674f82";
-export const secretHeadstashContractAddr = "secret1ykf6ysxy25qddd62c4yjyw0wn60uxtvvrm7xjn";
+export const secretHeadstashContractAddr = "secret1dx5a9ut29nv2n673hh06n0zh7z2fg63n0xylqg";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
+
+// account stuff
+const cosmos_sig = "c5uzRIuxO91I8BYxJ8CREuHoDkhH4wJXa5W8mng/gbhXnhAQQ9WEYsGkJHtEK8Ppnt6rXG/IcvL7x7AdBbmpfw==";
+const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
+const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
+const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
+const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
+const permitKey = "dezaym"
 
 // signing client 
 export const secretjs = new SecretNetworkClient({
@@ -42,15 +51,16 @@ let upload_contract = async () => {
     }
   );
 
-  const codeId = Number(
-    tx.arrayLog.find((log) => log.type === "message" && log.key === "code_id")
-      .value
-  );
-
-  console.log("codeId: ", codeId);
-  const contractCodeHash = (await secretjs.query.compute.codeHashByCodeId({ code_id: codeId })).code_hash;
-  console.log(`Contract hash: ${contractCodeHash}`);
+  if (tx.code == 0) {
+    const codeId = Number(
+      tx.arrayLog.find((log) => log.type === "message" && log.key === "code_id").value
+    );
+    console.log("codeId: ", codeId);
+    const contractCodeHash = (await secretjs.query.compute.codeHashByCodeId({ code_id: codeId })).code_hash;
+    console.log(`Contract hash: ${contractCodeHash}`);
+  }
 }
+
 
 // initialize a new headstash contract
 let instantiate_headstash_contract = async () => {
@@ -103,6 +113,7 @@ let instantiate_headstash_contract = async () => {
   console.log(contractAddress);
 }
 
+
 // initiates a new snip-20 
 let instantiate_contract = async (name, synbol, supported_denom) => {
   const initMsg = {
@@ -125,12 +136,14 @@ let instantiate_contract = async (name, synbol, supported_denom) => {
       gasLimit: 400_000,
     }
   );
-  //Find the contract_address in the logs
-  const contractAddress = tx.arrayLog.find(
-    (log) => log.type === "message" && log.key === "contract_address"
-  ).value;
+  if (tx.code == 0) {
+    //Find the contract_address in the logs
+    const contractAddress = tx.arrayLog.find(
+      (log) => log.type === "message" && log.key === "contract_address"
+    ).value;
 
-  console.log(contractAddress);
+    console.log(contractAddress);
+  }
 };
 
 
@@ -141,11 +154,11 @@ const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error('Invalid option. Please provide -s to store the contract, or -i to instantiate the contract, followed by expected values [name] [symbol] [ibc-hash].');
 } else if (args[0] === '-s') {
-  // upload_contract(args[1]);
+  upload_contract(args[1]);
 } else if (args[0] === '-h') {
   instantiate_headstash_contract();
 } else if (args[0] === '-a') {
-
+  create_account(args[1])
 } else if (args[0] === '-i') {
   if (args.length < 4) {
     console.error('Usage: -i name symbol [supported_denoms]');

@@ -9,76 +9,62 @@ const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlK
 const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
 const permitKey = ""
 
-
-const addressProofMsg = {
-  address: wallet.address,
-  amount: "",
-  contract: secretHeadstashContractAddr,
-  index: 1,
-  key: permitKey,
-}
-
-// Convert memo to single string
-let addrProofMsgJson = JSON.stringify(addressProofMsg, (key, value) => {
-  if (typeof value === 'string') {
-    return value.replace(/\\/g, '');
+let create_account = async () => {
+  const addressProofMsg = {
+    address: wallet.address,
+    amount: "420",
+    contract: secretHeadstashContractAddr,
+    index: 1,
+    key: permitKey,
   }
-  return value;
-});
+  // encode memo to base64 string
+  const encoded_memo = Buffer.from(JSON.stringify(addressProofMsg)).toString('base64');
 
-// encode memo to base64 string
-const encoded_memo = encodeJsonToB64(addrProofMsgJson);
+  const fillerMsg = {
+    coins: [],
+    contract: secretHeadstashContractAddr,
+    execute_msg: {},
+    sender: wallet.address,
+  }
 
-const fillerMsg = {
-  coins: [],
-  contract: secretHeadstashContractAddr,
-  execute_msg: "",
-  sender: wallet.address,
-}
+  // account
+  const permitParams = {
+    params: fillerMsg,
+    signature: {
+      pub_key: pubkey,
+      signature: cosmos_sig,
+    },
+    chain_id: chain_id,
+    memo: encoded_memo,
+  }
 
-// account
-const permitParams = {
-  params: fillerMsg,
-  memo: encoded_memo,
-  chain_id: chain_id,
-  signature: {
-    pub_key: pubkey,
-    signature: cosmos_sig,
-  },
-}
-
-console.log("PubKey:", pubkey);
-console.log("AddrProofMsg:", addrProofMsgJson);
-console.log("Encoded AddrProofMsg:", encoded_memo);
-// console.log("Encoded Partial Key:", encoded_partial_tree);
-
-// signature documentate as defined here: 
-// https://github.com/securesecrets/shade/blob/77abdc70bc645d97aee7de5eb9a2347d22da425f/packages/shade_protocol/src/signature/mod.rs#L100
-const createAccount = new MsgExecuteContract({
-  sender: wallet.address,
-  contract_address: secretHeadstashContractAddr,
-  code_hash: scrtHeadstashCodeHash,
-  msg: {
+  const createAccount = {
     account: {
       addresses: [permitParams],
       eth_pubkey: eth_pubkey,
       eth_sig: eth_sig.slice(2),
       partial_tree: partial_tree,
     }
+  }
+
+  const tx = await secretjs.tx.compute.executeContract({
+    sender: wallet.address,
+    contract_address: secretHeadstashContractAddr,
+    msg: createAccount,
+    code_hash: scrtHeadstashCodeHash,
   },
-  sent_funds: [], // optional
-});
+    {
+      gasLimit: 400_000,
+      explicitSignerData: {
+        accountNumber: 22761,
+        sequence: 191,
+        chainId: "pulsar-3"
+      }
+    })
 
-const tx = await secretjs.tx.broadcast([createAccount], {
-  gasLimit: 200_000,
-  // explicitSignerData: {
-  //   accountNumber: 22761,
-  //   sequence: 170,
-  //   chainId: "pulsar-3"
-  // }
-});
-
-console.log(tx);
+  console.log(tx);
+}
+export {create_account}
 
 
 
