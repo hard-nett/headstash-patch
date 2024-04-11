@@ -1,6 +1,6 @@
     {
      "account_number": "0",
-     "chain_id": "90u-4",
+     "chain_id": "pulsar-3",
      "fee": {
          "amount": [{
              "amount": "0",
@@ -12,8 +12,10 @@
      "msgs": [{
          "type": "signature_proof",
          "value": {
-             "address": "secret1sc0cldtf7nznvy6sxfdvngj953e6s0w90w9r4v",
-             "some_number": "10"
+             "coins": [],
+             "contract": "",
+             "execute_msg": {},
+             "sender": ""
          }
      }],
      "sequence": "0"

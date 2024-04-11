@@ -205,10 +205,10 @@ pub fn try_account(
                 &config,
                 &info.sender,
                 &mut account,
-                addresses.clone(),
-                eth_pubkey.clone(),
-                eth_sig.clone(),
-                partial_tree.clone(),
+                &addresses,
+                &eth_pubkey,
+                &eth_sig,
+                &partial_tree,
             )?;
 
             // Add default claim at index 0
@@ -253,10 +253,10 @@ pub fn try_account(
             &config,
             &info.sender,
             &mut account,
-            addresses.clone(),
-            eth_pubkey.clone(),
-            eth_sig.clone(),
-            partial_tree.clone(),
+            &addresses,
+            &eth_pubkey,
+            &eth_sig,
+            &partial_tree,
         )?;
     }
 
@@ -589,10 +589,10 @@ pub fn try_add_account_addresses(
     config: &Config,
     sender: &Addr,
     account: &mut Account,
-    addresses: Vec<AddressProofPermit>,
-    eth_pubkey: String,
-    eth_sig: String,
-    partial_tree: Vec<Binary>,
+    addresses: &Vec<AddressProofPermit>,
+    eth_pubkey: &String,
+    eth_sig: &String,
+    partial_tree: &Vec<Binary>,
 ) -> StdResult<()> {
     // Setup the items to validate
     let mut leaves_to_validate: Vec<(usize, [u8; 32])> = vec![];

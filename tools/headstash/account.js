@@ -7,7 +7,7 @@ const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
 const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
 const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
 const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
-const permitKey = ""
+const permitKey = "test123"
 
 let create_account = async () => {
   const addressProofMsg = {
@@ -55,11 +55,11 @@ let create_account = async () => {
   },
     {
       gasLimit: 400_000,
-      explicitSignerData: {
-        accountNumber: 22761,
-        sequence: 191,
-        chainId: "pulsar-3"
-      }
+      // explicitSignerData: {
+      //   accountNumber: 22761,
+      //   sequence: 191,
+      //   chainId: "pulsar-3"
+      // }
     })
 
   console.log(tx);
