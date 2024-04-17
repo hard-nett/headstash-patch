@@ -21,12 +21,12 @@ export const secretHeadstashContractAddr = "secret1dx5a9ut29nv2n673hh06n0zh7z2fg
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // account stuff
-const cosmos_sig = "c5uzRIuxO91I8BYxJ8CREuHoDkhH4wJXa5W8mng/gbhXnhAQQ9WEYsGkJHtEK8Ppnt6rXG/IcvL7x7AdBbmpfw==";
-const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
-const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
-const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
-const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
-const permitKey = "dezaym"
+export const cosmos_sig = "esaFDwiCoi6R5h/xdW/vPyyyFGrwfujMdR/2t65GmRczF3ZYwzQvzfVEBrOBopCa2x98dpEusml8ysi1khZLhQ==";
+export const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
+export const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
+export const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
+export const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
+export const permitKey = "test123"
 
 // signing client 
 export const secretjs = new SecretNetworkClient({

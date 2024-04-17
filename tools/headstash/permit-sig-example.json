@@ -13,9 +13,9 @@
          "type": "signature_proof",
          "value": {
              "coins": [],
-             "contract": "",
+             "contract": "secret1dx5a9ut29nv2n673hh06n0zh7z2fg63n0xylqg",
              "execute_msg": {},
-             "sender": ""
+             "sender": "secret13uazul89dp0lypuxcz0upygpjy0ftdah4lnrs4"
          }
      }],
      "sequence": "0"
