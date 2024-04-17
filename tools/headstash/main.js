@@ -75,9 +75,9 @@ let instantiate_headstash_contract = async () => {
       address: secretThiolContractAddr,
       code_hash: scrt20CodeHash
     },
-    start_date: null,
-    end_date: null,
-    decay_start: null,
+    start_date: 1713386815,
+    end_date: 1744922815,
+    decay_start: 1723927615,
     merkle_root: merkle_root,
     airdrop_amount: "840",
     total_accounts: 2,
@@ -97,7 +97,7 @@ let instantiate_headstash_contract = async () => {
       sender: wallet.address,
       code_hash: scrtHeadstashCodeHash,
       init_msg: initMsg,
-      label: "Secret Headstash Patch " + Math.ceil(Math.random() * 10000),
+      label: "Secret Headstash Patch" + Math.ceil(Math.random() * 10000),
     },
     {
       gasLimit: 400_000,
@@ -152,9 +152,9 @@ const args = process.argv.slice(2);
 
 // Determine which function to run based on the first argument
 if (args.length < 1) {
-  console.error('Invalid option. Please provide -s to store the contract, or -i to instantiate the contract, followed by expected values [name] [symbol] [ibc-hash].');
+  console.error('Invalid option. Please provide -s to store the contract, -i to instantiate the snip20 tokens followed by expected values [name] [symbol] [ibc-hash], -h to instantiate the headstash airdrop contract, -a to create the account,');
 } else if (args[0] === '-s') {
-  // upload_contract(args[1]);
+  upload_contract(args[1]);
 } else if (args[0] === '-h') {
   instantiate_headstash_contract();
 } else if (args[0] === '-a') {
