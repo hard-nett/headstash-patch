@@ -1,12 +1,12 @@
 import { MsgExecuteContract, fromBase64, toUtf8 } from "secretjs";
 import { encodeJsonToB64 } from "@shadeprotocol/shadejs";
-import { chain_id, scrtHeadstashCodeHash, secretHeadstashContractAddr, secretjs, txEncryptionSeed, wallet, permitKey, pubkey, cosmos_sig, eth_pubkey, eth_sig, partial_tree } from "./main.js";
+import { chain_id, scrtHeadstashCodeHash, scrtHeadstashContractAddr, secretjs, txEncryptionSeed, wallet, permitKey, pubkey, cosmos_sig, eth_pubkey, eth_sig, partial_tree } from "./main.js";
 
 let create_account = async () => {
   const addressProofMsg = {
     address: wallet.address,
     amount: "420",
-    contract: secretHeadstashContractAddr,
+    contract: scrtHeadstashContractAddr,
     index: 1,
     key: permitKey,
   }
@@ -15,7 +15,7 @@ let create_account = async () => {
 
   const fillerMsg = {
     coins: [],
-    contract: secretHeadstashContractAddr,
+    contract: scrtHeadstashContractAddr,
     execute_msg: {},
     sender: wallet.address,
   }
@@ -42,7 +42,7 @@ let create_account = async () => {
 
   const tx = await secretjs.tx.compute.executeContract({
     sender: wallet.address,
-    contract_address: secretHeadstashContractAddr,
+    contract_address: scrtHeadstashContractAddr,
     msg: createAccount,
     code_hash: scrtHeadstashCodeHash,
   },
@@ -55,6 +55,7 @@ let create_account = async () => {
       // }
     })
 
+    console.log(encoded_memo);
   console.log(tx);
 }
 export { create_account }

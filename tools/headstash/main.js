@@ -6,26 +6,26 @@ import * as fs from "fs";
 export const chain_id = "pulsar-3";
 export const wallet = new Wallet("goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-// export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
 export const scrt20codeId = 5697;
 export const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
-export const secretTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
-export const secretThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
+export const scrtTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
+export const scrtThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6559;
-export const scrtHeadstashCodeHash = "f494eda77c7816c4882d0dfde8bbd35b87975e427ea74315ed96c051d5674f82";
-export const secretHeadstashContractAddr = "secret1dx5a9ut29nv2n673hh06n0zh7z2fg63n0xylqg";
+export const scrtHeadstashCodeId = 6606;
+export const scrtHeadstashCodeHash = "e401bf5f5797ebc2fc75a60cefb7e8ebf6a005a5a3af540a47221dc3c1dabe6f";
+export const scrtHeadstashContractAddr = "secret1le5q4htk5c2fs627xzxclfcdts63wwvyp8nj4e";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // account stuff
-export const cosmos_sig = "esaFDwiCoi6R5h/xdW/vPyyyFGrwfujMdR/2t65GmRczF3ZYwzQvzfVEBrOBopCa2x98dpEusml8ysi1khZLhQ==";
+export const cosmos_sig = "oZvPavC1xXLpe3hzurUrBmLWFWZFQi/VF7u5dH7YrUJESeRX0rNB1oKixuVlwSFjh17f1SD/06SWdNzOXyTLDg==";
 export const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
 export const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
 export const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
-export const partial_tree = ['fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a']
+export const partial_tree = ["fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a"]
 export const permitKey = "test123"
 
 // signing client 
@@ -68,11 +68,11 @@ let instantiate_headstash_contract = async () => {
     admin: wallet.address,
     dump_address: wallet.address,
     airdrop_token: {
-      address: secretTerpContractAddr,
+      address: scrtTerpContractAddr,
       code_hash: scrt20CodeHash
     },
     airdrop_2: {
-      address: secretThiolContractAddr,
+      address: scrtThiolContractAddr,
       code_hash: scrt20CodeHash
     },
     start_date: 1713386815,
@@ -84,7 +84,7 @@ let instantiate_headstash_contract = async () => {
     max_amount: "420",
     default_claim: "50",
     task_claim: [{
-      address: secretHeadstashContractAddr,
+      address: scrtHeadstashContractAddr,
       percent: "50",
     }],
     claim_msg_plaintext: "{wallet}",
