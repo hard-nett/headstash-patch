@@ -6,7 +6,7 @@ use crate::{
     c_std::{Addr, Binary, Uint128},
     contract_interfaces::airdrop::{
         account::{AccountPermit, AddressProofPermit},
-        claim_info::RequiredTask,
+        // claim_info::RequiredTask,
     },
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
@@ -28,7 +28,7 @@ pub struct Config {
     // Airdrop amount
     pub airdrop_amount: Uint128,
     // Required tasks
-    pub task_claim: Vec<RequiredTask>,
+    // pub task_claim: Vec<RequiredTask>,
     // Checks if airdrop has started / ended
     pub start_date: u64,
     // Airdrop stops at end date if there is one
@@ -73,7 +73,7 @@ pub struct InstantiateMsg {
     // Default gifted amount
     pub default_claim: Uint128,
     // The task related claims
-    pub task_claim: Vec<RequiredTask>,
+    // pub task_claim: Vec<RequiredTask>,
     /// {wallet}
     pub claim_msg_plaintext: String,
     // Protects from leaking user information by limiting amount detail
@@ -95,19 +95,19 @@ pub enum ExecuteMsg {
         decay_start: Option<u64>,
         padding: Option<String>,
     },
-    AddTasks {
-        tasks: Vec<RequiredTask>,
-        padding: Option<String>,
-    },
-    CompleteTask {
-        address: Addr,
-        padding: Option<String>,
-    },
+    // AddTasks {
+    //     tasks: Vec<RequiredTask>,
+    //     padding: Option<String>,
+    // },
+    // CompleteTask {
+    //     address: Addr,
+    //     padding: Option<String>,
+    // },
     Account {
         addresses: Vec<AddressProofPermit>,
         eth_pubkey: String,
         eth_sig: String,
-        partial_tree: Vec<Binary>,
+        partial_tree: Vec<String>,
         padding: Option<String>,
     },
     DisablePermitKey {
@@ -147,7 +147,7 @@ pub enum ExecuteAnswer {
         total: Uint128,
         // Total claimed
         claimed: Uint128,
-        finished_tasks: Vec<RequiredTask>,
+        // finished_tasks: Vec<RequiredTask>,
         // Addresses claimed
         addresses: Vec<Addr>,
         eth_pubkey: String,
@@ -165,7 +165,7 @@ pub enum ExecuteAnswer {
         total: Uint128,
         // Total claimed
         claimed: Uint128,
-        finished_tasks: Vec<RequiredTask>,
+        // finished_tasks: Vec<RequiredTask>,
         // Addresses claimed
         addresses: Vec<Addr>,
         eth_pubkey: String,
@@ -219,7 +219,7 @@ pub enum QueryAnswer {
         claimed: Uint128,
         // Total unclaimed but available
         unclaimed: Uint128,
-        finished_tasks: Vec<RequiredTask>,
+        // finished_tasks: Vec<RequiredTask>,
         // Addresses claimed
         addresses: Vec<Addr>,
     },

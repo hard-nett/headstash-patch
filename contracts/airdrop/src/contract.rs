@@ -1,16 +1,24 @@
 use crate::{
     handle::{
-        try_account, try_add_tasks, try_claim, try_claim_decay, try_complete_task,
-        try_disable_permit_key, try_set_viewing_key, try_update_config,
+        try_account,
+        try_claim,
+        try_claim_decay,
+        // try_complete_task, try_add_tasks
+        try_disable_permit_key,
+        try_set_viewing_key,
+        try_update_config,
     },
     query,
     state::{config_w, decay_claimed_w, total_claimed_w},
 };
 use shade_protocol::{
     airdrop::{
-        claim_info::RequiredTask,
-        errors::{invalid_dates, invalid_task_percentage},
-        Config, ExecuteMsg, InstantiateMsg, QueryMsg,
+        // claim_info::RequiredTask,
+        errors::invalid_dates, // invalid_task_percentage
+        Config,
+        ExecuteMsg,
+        InstantiateMsg,
+        QueryMsg,
     },
     c_std::{
         shd_entry_point, to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError,
@@ -30,22 +38,22 @@ pub fn instantiate(
     msg: InstantiateMsg,
 ) -> StdResult<Response> {
     // Setup task claim
-    let mut task_claim = vec![RequiredTask {
-        address: env.contract.address.clone(),
-        percent: msg.default_claim,
-    }];
-    let mut claim = msg.task_claim;
-    task_claim.append(&mut claim);
+    // let mut task_claim = vec![RequiredTask {
+    //     address: env.contract.address.clone(),
+    //     percent: msg.default_claim,
+    // }];
+    // let mut claim = msg.task_claim;
+    // task_claim.append(&mut claim);
 
     // Validate claim percentage
-    let mut count = Uint128::zero();
-    for claim in task_claim.iter() {
-        count += claim.percent;
-    }
+    // let mut count = Uint128::zero();
+    // for claim in task_claim.iter() {
+    //     count += claim.percent;
+    // }
 
-    if count > Uint128::new(100u128) {
-        return Err(invalid_task_percentage(count.to_string().as_str()));
-    }
+    // if count > Uint128::new(100u128) {
+    //     return Err(invalid_task_percentage(count.to_string().as_str()));
+    // }
 
     let start_date = match msg.start_date {
         None => env.block.time.seconds(),
@@ -97,7 +105,7 @@ pub fn instantiate(
         airdrop_snip20: msg.airdrop_token.clone(),
         airdrop_snip20_optional: msg.airdrop_2.clone(),
         airdrop_amount: msg.airdrop_amount,
-        task_claim,
+        // task_claim,
         start_date,
         end_date: msg.end_date,
         decay_start: msg.decay_start,
@@ -141,10 +149,10 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
                 end_date,
                 start_decay,
             ),
-            ExecuteMsg::AddTasks { tasks, .. } => try_add_tasks(deps, &env, &info, tasks),
-            ExecuteMsg::CompleteTask { address, .. } => {
-                try_complete_task(deps, &env, &info, address)
-            }
+            // ExecuteMsg::AddTasks { tasks, .. } => try_add_tasks(deps, &env, &info, tasks),
+            // ExecuteMsg::CompleteTask { address, .. } => {
+            //     try_complete_task(deps, &env, &info, address)
+            // }
             ExecuteMsg::Account {
                 addresses,
                 eth_pubkey,
