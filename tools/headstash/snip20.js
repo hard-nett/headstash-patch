@@ -51,6 +51,7 @@ let deposit_to_snip20 = async (contract, amount, denom) => {
             gasLimit: 400_000,
         }
     )
+    console.log(tx)
 }
 let set_viewing_key = async (contract, entropy) => {
     const msg = { set_viewing_key: { key: entropy } }
@@ -73,6 +74,7 @@ let fund_headstash = async (contract, amount) => {
         },
         { gasLimit: 400_000, }
     )
+    console.log(tx)
 }
 
 let query_token_info = async (contract, code_hash) => {

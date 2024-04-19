@@ -30,8 +30,8 @@ let create_account = async () => {
   }
 
   const createAccount = {
-    account: {
-      addresses: [permitParams],
+    claim: {
+      amount: "420",
       eth_pubkey: eth_pubkey,
       eth_sig: eth_sig.slice(2),
       partial_tree: partial_tree,

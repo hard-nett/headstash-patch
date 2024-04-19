@@ -7,7 +7,7 @@ import * as fs from "fs";
 export const chain_id = "pulsar-3";
 export const wallet = new Wallet("goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-// export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
 export const scrt20codeId = 5697;
@@ -20,9 +20,9 @@ export const scrtIBCThiolDenom = "ibc/07FFE4A5E55AFA423DF355E3138858E6A302909F74
 const entropy = "eretskeretjableret";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6606;
-export const scrtHeadstashCodeHash = "e401bf5f5797ebc2fc75a60cefb7e8ebf6a005a5a3af540a47221dc3c1dabe6f";
-export const scrtHeadstashContractAddr = "secret1le5q4htk5c2fs627xzxclfcdts63wwvyp8nj4e";
+export const scrtHeadstashCodeId = 6666;
+export const scrtHeadstashCodeHash = "57ea68df4e95b9a76739faf4ff8ee3037cd2ba3790c7fd67325f15c4cdfc4acd";
+export const scrtHeadstashContractAddr = "secret1rnf497svcr76zkp48y5tpzyv4drxuwj6anqdjn";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // account stuff
@@ -126,7 +126,7 @@ const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error('Invalid option. Please provide -s to store the contract, -i to instantiate the snip20 tokens followed by expected values [name] [symbol] [ibc-hash], -h to instantiate the headstash airdrop contract, -a to create the account,');
 } else if (args[0] === '-s') {
-  // upload_contract(args[1]);
+  upload_contract(args[1]);
 } else if (args[0] === '-h') { // instantiate headstash contract
   instantiate_headstash_contract();
 
@@ -163,6 +163,7 @@ if (args.length < 1) {
   i_snip20("thiol-snip20", "THIOL", scrtIBCThiolDenom)
     .then(() => { console.log("Created the Thiol Snip20!"); })
     .catch((error) => { console.error("Failed:", error); });
+    
 } else if (args[0] === '-deposit-terp') {
   if (args.length < 2) {
     console.error('Usage: -deposit-terp amount');
