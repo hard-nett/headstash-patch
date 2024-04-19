@@ -1,18 +1,23 @@
 import { Wallet, SecretNetworkClient, EncryptionUtilsImpl, MsgExecuteContract, fromUtf8, MsgExecuteContractResponse } from "secretjs";
-import {create_account} from './account.js'
+import { create_account } from './account.js'
+import { i_snip20, deposit_to_snip20, query_token_info, query_token_config, set_viewing_key, query_balance, fund_headstash } from './snip20.js'
 import * as fs from "fs";
 
 // wallet
 export const chain_id = "pulsar-3";
 export const wallet = new Wallet("goat action fuel major strategy adult kind sand draw amazing pigeon inspire antenna forget six kiss loan script west jaguar again click review have");
 export const txEncryptionSeed = EncryptionUtilsImpl.GenerateNewSeed();
-export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
+// export const contract_wasm = fs.readFileSync("./target/wasm32-unknown-unknown/release/airdrop.wasm");
 
 // snip-20
 export const scrt20codeId = 5697;
 export const scrt20CodeHash = "c74bc4b0406507257ed033caa922272023ab013b0c74330efc16569528fa34fe";
-export const scrtTerpContractAddr = "secret1c3lj7dr9r2pe83j3yx8jt5v800zs9sq7we6wrc";
-export const scrtThiolContractAddr = "secret1umh28jgcp0g9jy3qc29xk42kq92xjrcdfgvwdz";
+export const scrtTerpContractAddr = "secret1wmp90kd0zsnq3p35m457ufc4p807v3j7tvkhwx";
+export const scrtThiolContractAddr = "secret1g6d9cjsw2k9n5xr5u750u8t4v4hvhmcy828q7w";
+export const scrtIBCTerpDenom = "ibc/BE5D2CF4CFB043522B95ACAF30113B6DDEDE8FB09B9CFBE4322B70C487781241";
+export const scrtIBCThiolDenom = "ibc/07FFE4A5E55AFA423DF355E3138858E6A302909F74595676A9EDC1A76D9511F1";
+
+const entropy = "eretskeretjableret";
 
 // airdrop contract
 export const scrtHeadstashCodeId = 6606;
@@ -60,7 +65,6 @@ let upload_contract = async () => {
     console.log(`Contract hash: ${contractCodeHash}`);
   }
 }
-
 
 // initialize a new headstash contract
 let instantiate_headstash_contract = async () => {
@@ -114,38 +118,6 @@ let instantiate_headstash_contract = async () => {
 }
 
 
-// initiates a new snip-20 
-let instantiate_contract = async (name, synbol, supported_denom) => {
-  const initMsg = {
-    name: "Terp Network Gas Token",
-    symbol: "THIOL",
-    decimals: 6,
-    prng_seed: Buffer.from("dezayum").toString("base64"),
-    admin: wallet.address,
-    supported_denoms: [supported_denom]
-  };
-  let tx = await secretjs.tx.compute.instantiateContract(
-    {
-      code_id: codeId,
-      sender: wallet.address,
-      code_hash: contractCodeHash,
-      init_msg: initMsg,
-      label: " Secret Wrapped Terp Network Gas Tokens (THIOL)" + Math.ceil(Math.random() * 10000),
-    },
-    {
-      gasLimit: 400_000,
-    }
-  );
-  if (tx.code == 0) {
-    //Find the contract_address in the logs
-    const contractAddress = tx.arrayLog.find(
-      (log) => log.type === "message" && log.key === "contract_address"
-    ).value;
-
-    console.log(contractAddress);
-  }
-};
-
 
 // Process command line arguments
 const args = process.argv.slice(2);
@@ -154,24 +126,88 @@ const args = process.argv.slice(2);
 if (args.length < 1) {
   console.error('Invalid option. Please provide -s to store the contract, -i to instantiate the snip20 tokens followed by expected values [name] [symbol] [ibc-hash], -h to instantiate the headstash airdrop contract, -a to create the account,');
 } else if (args[0] === '-s') {
-  upload_contract(args[1]);
-} else if (args[0] === '-h') {
+  // upload_contract(args[1]);
+} else if (args[0] === '-h') { // instantiate headstash contract
   instantiate_headstash_contract();
-} else if (args[0] === '-a') {
-  create_account(args[1])
-} else if (args[0] === '-i') {
-  if (args.length < 4) {
-    console.error('Usage: -i name symbol [supported_denoms]');
+
+
+  //////////////////////////////// HEADSTASH ACTIONS ///////////////////////////////
+} else if (args[0] === '-fund-hs-terp') {
+  if (args.length < 2) {
+    console.error('Usage: -fund-hs-terp amount');
     process.exit(1);
   }
-  const [, name, symbol, supported_denoms] = args; // Extracting values
-  instantiate_contract(name, symbol, supported_denoms)
-    .then(() => {
-      console.log("Upload completed!");
-    })
-    .catch((error) => {
-      console.error("Upload failed:", error);
-    });
+  const [, a,] = args;
+  fund_headstash(scrtTerpContractAddr, a)
+    .then(() => { console.log("Funded headstash with TERP!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-fund-hs-thiol') {
+  if (args.length < 2) {
+    console.error('Usage: -fund-hs-thiol amount');
+    process.exit(1);
+  }
+  const [, a,] = args;
+  fund_headstash(scrtThiolContractAddr, a)
+    .then(() => { console.log("Funded headstash with THIOL!"); })
+    .catch((error) => { console.error("Failed:", error); });
+
+} else if (args[0] === '-a') { // create an account, claims airdrop 
+  create_account(args[1])
+
+  //////////////////////////////// SNIP20 ACTIONS //////////////////////////////////
+} else if (args[0] === '-i-terp') {
+  i_snip20("terp-snip20", "TERP", scrtIBCTerpDenom)
+    .then(() => { console.log("Created the Terp Snip20!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-i-thiol') {
+  i_snip20("thiol-snip20", "THIOL", scrtIBCThiolDenom)
+    .then(() => { console.log("Created the Thiol Snip20!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-deposit-terp') {
+  if (args.length < 2) {
+    console.error('Usage: -deposit-terp amount');
+    process.exit(1);
+  }
+  const [, a,] = args;
+  console.log("depositing TERP")
+  deposit_to_snip20(scrtTerpContractAddr, a, scrtIBCTerpDenom)
+    .then(() => { console.log("Converted TERP into its secret form!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-deposit-thiol') {
+  if (args.length < 2) {
+    console.error('Usage: -d amount');
+    process.exit(1);
+  }
+  const [, a,] = args;
+  console.log("depositing THIOL")
+  deposit_to_snip20(scrtThiolContractAddr, a, scrtIBCThiolDenom)
+    .then(() => { console.log("Converted THIOL into its secret form!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-viewing-key-thiol') {
+  set_viewing_key(scrtThiolContractAddr, entropy)
+    .then(() => { console.log("Created viewing-key!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-viewing-key-terp') {
+  set_viewing_key(scrtTerpContractAddr, entropy)
+    .then(() => { console.log("Created viewing-key!"); })
+    .catch((error) => { console.error("Failed:", error); });
+  //////////////////////////////// SNIP20 QUERIES //////////////////////////////////
+} else if (args[0] === '-q-snip20-info-terp') { // query terp snip20 info
+  query_token_info(scrtTerpContractAddr, scrt20CodeHash)
+} else if (args[0] === '-q-snip20-info-thiol') {  // query thiol snip20 info 
+  query_token_info(scrtThiolContractAddr, scrt20CodeHash)
+} else if (args[0] === '-q-snip20-config-terp') { // query terp snip20 config
+  query_token_config(scrtTerpContractAddr, scrt20CodeHash)
+} else if (args[0] === '-q-snip20-config-thiol') {  // query thiol snip20 config 
+  query_token_config(scrtThiolContractAddr, scrt20CodeHash)
+} else if (args[0] === '-q-bal-terp') {
+  query_balance(scrtTerpContractAddr, entropy)
+    .then(() => { console.log("Queried Balance!"); })
+    .catch((error) => { console.error("Failed:", error); });
+} else if (args[0] === '-q-bal-thiol') {
+  query_balance(scrtThiolContractAddr, entropy)
+    .then(() => { console.log("Queried Balance!"); })
+    .catch((error) => { console.error("Failed:", error); });
 } else {
-  console.error('Invalid option. Please provide -s to store the contract, or -i to instantiate the contract, followed by expected values [name] [symbol] [ibc-hash].');
+  console.error('Invalid option.');
 }
