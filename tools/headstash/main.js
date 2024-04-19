@@ -31,7 +31,7 @@ export const eth_pubkey = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
 export const eth_sig = "0xf7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b"
 export const pubkey = { type: "tendermint/PubKeySecp256k1", value: "AyZtxhLgis4Ec66OVlKDnuzEZqqV641sm46R3mbE2cpO" }
 export const partial_tree = ["fbff7c66d3f610bcf8223e61ce12b10bb64a3433622ff39af83443bcec78920a"]
-export const permitKey = "test123"
+export const permitKey = "eretskeretjableret"
 
 // signing client 
 export const secretjs = new SecretNetworkClient({
@@ -86,11 +86,11 @@ let instantiate_headstash_contract = async () => {
     airdrop_amount: "840",
     total_accounts: 2,
     max_amount: "420",
-    default_claim: "50",
-    task_claim: [{
-      address: scrtHeadstashContractAddr,
-      percent: "50",
-    }],
+    // default_claim: "50",
+    // task_claim: [{
+    //   address: scrtHeadstashContractAddr,
+    //   percent: "50",
+    // }],
     claim_msg_plaintext: "{wallet}",
     query_rounding: "1"
   };

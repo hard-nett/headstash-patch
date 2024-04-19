@@ -1,5 +1,3 @@
-import { MsgExecuteContract, fromBase64, toUtf8 } from "secretjs";
-import { encodeJsonToB64 } from "@shadeprotocol/shadejs";
 import { chain_id, scrtHeadstashCodeHash, scrtHeadstashContractAddr, secretjs, txEncryptionSeed, wallet, permitKey, pubkey, cosmos_sig, eth_pubkey, eth_sig, partial_tree } from "./main.js";
 
 let create_account = async () => {

@@ -1,7 +1,4 @@
-import { MsgExecuteContract, fromBase64, toUtf8 } from "secretjs";
-import { encodeJsonToB64 } from "@shadeprotocol/shadejs";
-import { chain_id, scrt20CodeHash, scrt20codeId, secretjs, wallet, scrtTerpContractAddr, scrtThiolContractAddr, scrtHeadstashContractAddr } from "./main.js";
-
+import { chain_id, scrt20CodeHash, scrt20codeId, secretjs, wallet, scrtHeadstashContractAddr } from "./main.js";
 
 // initiates a new snip-20 
 let i_snip20 = async (name, symbol, supported_denom) => {

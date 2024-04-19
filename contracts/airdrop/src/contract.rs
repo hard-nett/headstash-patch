@@ -1,6 +1,6 @@
 use crate::{
     handle::{
-        try_account,
+        // try_account,
         try_claim,
         try_claim_decay,
         // try_complete_task, try_add_tasks
@@ -153,26 +153,40 @@ pub fn execute(deps: DepsMut, env: Env, info: MessageInfo, msg: ExecuteMsg) -> S
             // ExecuteMsg::CompleteTask { address, .. } => {
             //     try_complete_task(deps, &env, &info, address)
             // }
-            ExecuteMsg::Account {
-                addresses,
-                eth_pubkey,
-                eth_sig,
-                partial_tree,
-                ..
-            } => try_account(
-                deps,
-                &env,
-                &info,
-                addresses,
-                eth_pubkey,
-                eth_sig,
-                partial_tree,
-            ),
+            // ExecuteMsg::Account {
+            //     addresses,
+            //     eth_pubkey,
+            //     eth_sig,
+            //     partial_tree,
+            //     ..
+            // } => try_account(
+            //     deps,
+            //     &env,
+            //     &info,
+            //     addresses,
+            //     eth_pubkey,
+            //     eth_sig,
+            //     partial_tree,
+            // ),
             ExecuteMsg::DisablePermitKey { key, .. } => {
                 try_disable_permit_key(deps, &env, &info, key)
             }
             ExecuteMsg::SetViewingKey { key, .. } => try_set_viewing_key(deps, &env, &info, key),
-            ExecuteMsg::Claim { .. } => try_claim(deps, &env, &info),
+            ExecuteMsg::Claim {
+                amount,
+                eth_pubkey,
+                eth_sig,
+                partial_tree,
+                ..
+            } => try_claim(
+                deps,
+                &env,
+                &info,
+                amount,
+                &eth_pubkey,
+                &eth_sig,
+                &partial_tree,
+            ),
             ExecuteMsg::ClaimDecay { .. } => try_claim_decay(deps, &env, &info),
         },
         RESPONSE_BLOCK_SIZE,

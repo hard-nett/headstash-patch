@@ -4,10 +4,7 @@ pub mod errors;
 
 use crate::{
     c_std::{Addr, Binary, Uint128},
-    contract_interfaces::airdrop::{
-        account::{AccountPermit, AddressProofPermit},
-        // claim_info::RequiredTask,
-    },
+    contract_interfaces::airdrop::account::{AccountPermit, AddressProofPermit},
     utils::{asset::Contract, generic_response::ResponseStatus},
 };
 
@@ -71,7 +68,7 @@ pub struct InstantiateMsg {
     // Max possible reward amount
     pub max_amount: Uint128,
     // Default gifted amount
-    pub default_claim: Uint128,
+    // pub default_claim: Uint128,
     // The task related claims
     // pub task_claim: Vec<RequiredTask>,
     /// {wallet}
@@ -103,13 +100,13 @@ pub enum ExecuteMsg {
     //     address: Addr,
     //     padding: Option<String>,
     // },
-    Account {
-        addresses: Vec<AddressProofPermit>,
-        eth_pubkey: String,
-        eth_sig: String,
-        partial_tree: Vec<String>,
-        padding: Option<String>,
-    },
+    // Account {
+    //     addresses: Vec<AddressProofPermit>,
+    //     eth_pubkey: String,
+    //     eth_sig: String,
+    //     partial_tree: Vec<String>,
+    //     padding: Option<String>,
+    // },
     DisablePermitKey {
         key: String,
         padding: Option<String>,
@@ -119,6 +116,10 @@ pub enum ExecuteMsg {
         padding: Option<String>,
     },
     Claim {
+        amount: Uint128,
+        eth_pubkey: String,
+        eth_sig: String,
+        partial_tree: Vec<String>,
         padding: Option<String>,
     },
     ClaimDecay {
@@ -135,24 +136,24 @@ pub enum ExecuteAnswer {
     UpdateConfig {
         status: ResponseStatus,
     },
-    AddTask {
-        status: ResponseStatus,
-    },
-    CompleteTask {
-        status: ResponseStatus,
-    },
-    Account {
-        status: ResponseStatus,
-        // Total eligible
-        total: Uint128,
-        // Total claimed
-        claimed: Uint128,
-        // finished_tasks: Vec<RequiredTask>,
-        // Addresses claimed
-        addresses: Vec<Addr>,
-        eth_pubkey: String,
-        eth_sig: String,
-    },
+    // AddTask {
+    //     status: ResponseStatus,
+    // },
+    // CompleteTask {
+    //     status: ResponseStatus,
+    // },
+    // Account {
+    //     status: ResponseStatus,
+    //     // Total eligible
+    //     total: Uint128,
+    //     // Total claimed
+    //     claimed: Uint128,
+    //     // finished_tasks: Vec<RequiredTask>,
+    //     // Addresses claimed
+    //     addresses: Vec<Addr>,
+    //     eth_pubkey: String,
+    //     eth_sig: String,
+    // },
     DisablePermitKey {
         status: ResponseStatus,
     },
@@ -162,12 +163,13 @@ pub enum ExecuteAnswer {
     Claim {
         status: ResponseStatus,
         // Total eligible
-        total: Uint128,
+        // total: Uint128,
         // Total claimed
         claimed: Uint128,
         // finished_tasks: Vec<RequiredTask>,
         // Addresses claimed
-        addresses: Vec<Addr>,
+        // addresses: Vec<Addr>,
+        address: String,
         eth_pubkey: String,
         eth_sig: String,
     },

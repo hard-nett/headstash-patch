@@ -13,13 +13,23 @@ use shade_protocol::{
         account::{Account, AccountKey, AddressProofMsg, AddressProofPermit},
         // claim_info::RequiredTask,
         errors::{
-            account_does_not_exist, address_already_in_account, airdrop_ended, airdrop_not_started,
-            claim_too_high, decay_claimed, decay_not_set, expected_memo, failed_verification,
-            invalid_dates,  not_admin,
-             unexpected_error, wrong_length,
-            // invalid_partial_tree, invalid_task_percentage, nothing_to_claim
+            account_does_not_exist,
+            address_already_in_account,
+            airdrop_ended,
+            airdrop_not_started,
+            claim_too_high,
+            decay_claimed,
+            decay_not_set,
+            expected_memo,
+            failed_verification,
+            invalid_dates,
+            not_admin,
+            nothing_to_claim,
+            unexpected_error,
+            wrong_length, // invalid_partial_tree, invalid_task_percentage, nothing_to_claim
         },
-        Config, ExecuteAnswer,
+        Config,
+        ExecuteAnswer,
     },
     c_std::{
         from_binary, to_binary, Addr, Api, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
@@ -176,179 +186,178 @@ pub fn try_update_config(
 //     Ok(Response::new().set_data(to_binary(&ExecuteAnswer::AddTask { status: Success })?))
 // }
 
-pub fn try_account(
-    deps: DepsMut,
-    env: &Env,
-    info: &MessageInfo,
-    addresses: Vec<AddressProofPermit>,
-    eth_pubkey: String,
-    eth_sig: String,
-    partial_tree: Vec<String>,
-) -> StdResult<Response> {
-    // Check if airdrop active
-    let config = config_r(deps.storage).load()?;
+// pub fn try_account(
+//     deps: DepsMut,
+//     env: &Env,
+//     info: &MessageInfo,
+//     addresses: Vec<AddressProofPermit>,
+//     eth_pubkey: String,
+//     eth_sig: String,
+//     partial_tree: Vec<String>,
+// ) -> StdResult<Response> {
+//     // Check if airdrop active
+//     let config = config_r(deps.storage).load()?;
 
-    // Check that airdrop hasn't ended
-    available(&config, env)?;
+//     // Check that airdrop hasn't ended
+//     available(&config, env)?;
 
-    // Setup account
-    let sender = info.sender.to_string();
+//     // Setup account
+//     let sender = info.sender.to_string();
 
-    // These variables are setup to facilitate updating
-    let updating_account: bool;
-    let old_claim_amount: Uint128;
+//     // These variables are setup to facilitate updating
+//     let updating_account: bool;
+//     let old_claim_amount: Uint128;
 
-    // hardcode to 100% because we do not have tasks assigned to claim
-    let completed_percentage = Uint128::new(100u128);
+//     // hardcode to 100% because we do not have tasks assigned to claim
+//     let completed_percentage = Uint128::new(100u128);
 
-    // validate the eth_sig was generated with the eth_pubkey provided
-    validate_claim(
-        &deps,
-        info.clone(),
-        eth_pubkey.clone(),
-        eth_sig.clone(),
-        config.clone(),
-    )?;
+//     // validate the eth_sig was generated with the eth_pubkey provided
+//     validate_claim(
+//         &deps,
+//         info.clone(),
+//         eth_pubkey.clone(),
+//         eth_sig.clone(),
+//         config.clone(),
+//     )?;
 
-    let mut account = match account_r(deps.storage).may_load(sender.as_bytes())? {
-        None => {
-            updating_account = false;
-            old_claim_amount = Uint128::zero();
-            let mut account = Account::default();
+//     let mut account = match account_r(deps.storage).may_load(sender.as_bytes())? {
+//         None => {
+//             updating_account = false;
+//             old_claim_amount = Uint128::zero();
+//             let mut account = Account::default();
 
-            // Validate permits
-            try_add_account_addresses(
-                deps.storage,
-                deps.api,
-                &config,
-                &info.sender,
-                &mut account,
-                &addresses,
-                &eth_pubkey,
-                &eth_sig,
-                &partial_tree,
-            )?;
+//             // Validate permits
+//             try_add_account_addresses(
+//                 deps.storage,
+//                 deps.api,
+//                 &config,
+//                 &info.sender,
+//                 &mut account,
+//                 &addresses,
+//                 &eth_pubkey,
+//                 &eth_sig,
+//                 &partial_tree,
+//             )?;
 
-            // Add default claim at index 0
-            account_total_claimed_w(deps.storage).save(sender.as_bytes(), &Uint128::zero())?;
-            claim_status_w(deps.storage, 0).save(sender.as_bytes(), &false)?;
+//             // Add default claim at index 0
+//             account_total_claimed_w(deps.storage).save(sender.as_bytes(), &Uint128::zero())?;
+//             claim_status_w(deps.storage, 0).save(sender.as_bytes(), &false)?;
 
-            account
-        }
-        Some(acc) => {
-            updating_account = true;
-            old_claim_amount = acc.total_claimable;
-            acc
-        }
-    };
+//             account
+//         }
+//         Some(acc) => {
+//             updating_account = true;
+//             old_claim_amount = acc.total_claimable;
+//             acc
+//         }
+//     };
 
-    // Claim airdrop
-    let mut messages = vec![];
+//     // Claim airdrop
+//     let mut messages = vec![];
 
-    // let (completed_percentage, unclaimed_percentage) =
-    //     update_tasks(deps.storage, &config, sender.clone())?;
+//     // let (completed_percentage, unclaimed_percentage) =
+//     //     update_tasks(deps.storage, &config, sender.clone())?;
 
-    let mut redeem_amount = Uint128::zero();
+//     let mut redeem_amount = Uint128::zero();
 
-    let state = claim_status_r(deps.storage, 0).may_load(sender.as_bytes())?;
+//     let state = claim_status_r(deps.storage, 0).may_load(sender.as_bytes())?;
 
-    // if tokens were already claimed, calculate the new claim percentage
-    // if unclaimed_percentage > Uint128::zero() {
+//     // if tokens were already claimed, calculate the new claim percentage
+//     // if unclaimed_percentage > Uint128::zero() {
 
-    // if
-    if state == Some(false) {
-        redeem_amount = claim_tokens(
-            deps.storage,
-            env,
-            info,
-            &config,
-            &account,
-            // completed_percentage,
-            // unclaimed_percentage,
-        )?;
-    }
+//     if state == Some(false) {
+//         redeem_amount = claim_tokens(
+//             deps.storage,
+//             env,
+//             info,
+//             &config,
+//             &account,
+//             // completed_percentage,
+//             // unclaimed_percentage,
+//         )?;
+//     }
 
-    // Update account after claim to calculate difference
-    if updating_account {
-        // Validate permits
-        try_add_account_addresses(
-            deps.storage,
-            deps.api,
-            &config,
-            &info.sender,
-            &mut account,
-            &addresses,
-            &eth_pubkey,
-            &eth_sig,
-            &partial_tree,
-        )?;
-    }
+//     // Update account after claim to calculate difference
+//     if updating_account {
+//         // Validate permits
+//         try_add_account_addresses(
+//             deps.storage,
+//             deps.api,
+//             &config,
+//             &info.sender,
+//             &mut account,
+//             &addresses,
+//             &eth_pubkey,
+//             &eth_sig,
+//             &partial_tree,
+//         )?;
+//     }
 
-    if updating_account && completed_percentage > Uint128::zero() {
-        // Calculate the total new address amount
-        // total_claimable should equal old_claim_amount, expecting new claimable amount to be 0
-        let added_address_total = account.total_claimable.checked_sub(old_claim_amount)?;
-        account_total_claimed_w(deps.storage).update(sender.as_bytes(), |claimed| {
-            if let Some(claimed) = claimed {
-                let new_redeem: Uint128;
-                if completed_percentage == Uint128::new(100u128) {
-                    new_redeem = // will always be 0 
-                        added_address_total * decay_factor(env.block.time.seconds(), &config);
-                } else {
-                    new_redeem = completed_percentage
-                        .multiply_ratio(added_address_total, Uint128::new(100u128))
-                        * decay_factor(env.block.time.seconds(), &config);
-                }
+//     if updating_account && completed_percentage > Uint128::zero() {
+//         // Calculate the total new address amount
+//         // total_claimable should equal old_claim_amount, expecting new claimable amount to be 0
+//         let added_address_total = account.total_claimable.checked_sub(old_claim_amount)?;
+//         account_total_claimed_w(deps.storage).update(sender.as_bytes(), |claimed| {
+//             if let Some(claimed) = claimed {
+//                 let new_redeem: Uint128;
+//                 if completed_percentage == Uint128::new(100u128) {
+//                     new_redeem = // will always be 0
+//                         added_address_total * decay_factor(env.block.time.seconds(), &config);
+//                 } else {
+//                     new_redeem = completed_percentage
+//                         .multiply_ratio(added_address_total, Uint128::new(100u128))
+//                         * decay_factor(env.block.time.seconds(), &config);
+//                 }
 
-                redeem_amount += new_redeem;
-                Ok(claimed + new_redeem)
-            } else {
-                Err(unexpected_error())
-            }
-        })?;
-    }
+//                 redeem_amount += new_redeem;
+//                 Ok(claimed + new_redeem)
+//             } else {
+//                 Err(unexpected_error())
+//             }
+//         })?;
+//     }
 
-    if redeem_amount > Uint128::zero() {
-        total_claimed_w(deps.storage)
-            .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
+//     if redeem_amount > Uint128::zero() {
+//         total_claimed_w(deps.storage)
+//             .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
 
-        let hs1 = send_msg(
-            info.sender.clone(),
-            redeem_amount.into(),
-            None,
-            None,
-            None,
-            &config.airdrop_snip20,
-        )?;
-        messages.push(hs1);
+//         let hs1 = send_msg(
+//             info.sender.clone(),
+//             redeem_amount.into(),
+//             None,
+//             None,
+//             None,
+//             &config.airdrop_snip20,
+//         )?;
+//         messages.push(hs1);
 
-        if !config.airdrop_snip20_optional.is_none() {
-            let hs2 = send_msg(
-                info.sender.clone(),
-                redeem_amount.into(),
-                None,
-                None,
-                None,
-                &config.airdrop_snip20_optional.unwrap(),
-            )?;
-            messages.push(hs2);
-        };
-    }
+//         if !config.airdrop_snip20_optional.is_none() {
+//             let hs2 = send_msg(
+//                 info.sender.clone(),
+//                 redeem_amount.into(),
+//                 None,
+//                 None,
+//                 None,
+//                 &config.airdrop_snip20_optional.unwrap(),
+//             )?;
+//             messages.push(hs2);
+//         };
+//     }
 
-    // Save account
-    account_w(deps.storage).save(sender.as_bytes(), &account)?;
+//     // Save account
+//     account_w(deps.storage).save(sender.as_bytes(), &account)?;
 
-    Ok(Response::new().set_data(to_binary(&ExecuteAnswer::Account {
-        status: ResponseStatus::Success,
-        total: account.total_claimable,
-        claimed: account_total_claimed_r(deps.storage).load(sender.to_string().as_bytes())?,
-        // Will always be 0 since rewards are automatically claimed here
-        // finished_tasks: finished_tasks(deps.storage, sender.clone())?,
-        addresses: account.addresses,
-        eth_pubkey,
-        eth_sig,
-    })?))
-}
+//     Ok(Response::new().set_data(to_binary(&ExecuteAnswer::Account {
+//         status: ResponseStatus::Success,
+//         total: account.total_claimable,
+//         claimed: account_total_claimed_r(deps.storage).load(sender.to_string().as_bytes())?,
+//         // Will always be 0 since rewards are automatically claimed here
+//         // finished_tasks: finished_tasks(deps.storage, sender.clone())?,
+//         addresses: account.addresses,
+//         eth_pubkey,
+//         eth_sig,
+//     })?))
+// }
 
 pub fn try_disable_permit_key(
     deps: DepsMut,
@@ -408,7 +417,15 @@ pub fn try_set_viewing_key(
 //     Ok(Response::new().set_data(to_binary(&ExecuteAnswer::CompleteTask { status: Success })?))
 // }
 
-pub fn try_claim(deps: DepsMut, env: &Env, info: &MessageInfo) -> StdResult<Response> {
+pub fn try_claim(
+    deps: DepsMut,
+    env: &Env,
+    info: &MessageInfo,
+    amount: Uint128,
+    eth_pubkey: &String,
+    eth_sig: &String,
+    partial_tree: &Vec<String>,
+) -> StdResult<Response> {
     let config = config_r(deps.storage).load()?;
 
     // Check that airdrop hasn't ended
@@ -416,16 +433,47 @@ pub fn try_claim(deps: DepsMut, env: &Env, info: &MessageInfo) -> StdResult<Resp
 
     // Get account
     let sender = info.sender.clone();
-    let account = account_r(deps.storage).load(sender.to_string().as_bytes())?;
+    // let account = account_r(deps.storage).load(sender.to_string().as_bytes())?;
+    let state = claim_status_r(deps.storage, 0).may_load(eth_pubkey.as_bytes())?;
 
+    // Check if eth_pubkey has not claimed
+    if state == Some(true) {
+        return Err(nothing_to_claim());
+    }
     // validate eth_signature
     validation::validate_claim(
         &deps,
         info.clone(),
-        account.eth_pubkey.clone(), // uses the saved account eth_pubkey
-        account.eth_sig.clone(),
+        eth_pubkey.clone(), // uses the saved account eth_pubkey
+        eth_sig.clone(),
         config.clone(),
     )?;
+
+    // generate merkleTree leaf with eth_pubkey & amount
+    let user_input = format!("{}{}", eth_pubkey, amount);
+    let hash = sha2::Sha256::digest(user_input.as_bytes())
+        .as_slice()
+        .try_into()
+        .map_err(|_| wrong_length())?;
+
+    let hash = partial_tree.into_iter().try_fold(hash, |hash, p| {
+        let mut proof_buf = [0; 32];
+        hex::decode_to_slice(p, &mut proof_buf)
+            .expect("Error with merkle verification process #01!");
+        let mut hashes = [hash, proof_buf];
+        hashes.sort_unstable();
+        sha2::Sha256::digest(&hashes.concat())
+            .as_slice()
+            .try_into()
+            .map_err(|_| wrong_length())
+    })?;
+
+    let mut root_buf: [u8; 32] = [0; 32];
+    hex::decode_to_slice(config.merkle_root.as_ref(), &mut root_buf)
+        .expect("Error with merkle verification process #02!");
+    if root_buf != hash {
+        return Err(failed_verification());
+    }
 
     // Calculate airdrop
     // let (completed_percentage, unclaimed_percentage) =
@@ -435,20 +483,20 @@ pub fn try_claim(deps: DepsMut, env: &Env, info: &MessageInfo) -> StdResult<Resp
     //     return Err(nothing_to_claim());
     // }
 
-    let redeem_amount = claim_tokens(
-        deps.storage,
-        env,
-        info,
-        &config,
-        &account,
-        // completed_percentage,
-        // unclaimed_percentage,
-    )?;
+    // let redeem_amount = claim_tokens(
+    //     deps.storage,
+    //     env,
+    //     info,
+    //     &config,
+    //     &account,
+    //     // completed_percentage,
+    //     // unclaimed_percentage,
+    // )?;
 
     let mut msgs: Vec<CosmosMsg> = vec![];
     let hs1 = send_msg(
         sender.clone(),
-        redeem_amount.into(),
+        amount.into(),
         None,
         None,
         None,
@@ -459,7 +507,7 @@ pub fn try_claim(deps: DepsMut, env: &Env, info: &MessageInfo) -> StdResult<Resp
     if !config.airdrop_snip20_optional.is_none() {
         let hs2 = send_msg(
             sender.clone(),
-            redeem_amount.into(),
+            amount.into(),
             None,
             None,
             None,
@@ -468,18 +516,18 @@ pub fn try_claim(deps: DepsMut, env: &Env, info: &MessageInfo) -> StdResult<Resp
         msgs.push(hs2);
     };
 
-    total_claimed_w(deps.storage)
-        .update(|claimed| -> StdResult<Uint128> { Ok(claimed + redeem_amount) })?;
+    total_claimed_w(deps.storage).update(|claimed| -> StdResult<Uint128> { Ok(amount) })?;
 
     Ok(Response::new()
         .set_data(to_binary(&ExecuteAnswer::Claim {
             status: ResponseStatus::Success,
-            total: account.total_claimable,
             claimed: account_total_claimed_r(deps.storage).load(sender.to_string().as_bytes())?,
+            address: info.sender.to_string(),
+            eth_pubkey: eth_pubkey.to_string(),
+            eth_sig: eth_sig.to_string(),
+            // total: account.total_claimable,
             // finished_tasks: finished_tasks(deps.storage, sender.to_string())?,
-            addresses: account.addresses,
-            eth_pubkey: account.eth_pubkey,
-            eth_sig: account.eth_sig,
+            // addresses: account.addresses,
         })?)
         .add_messages(msgs))
 }
@@ -628,146 +676,146 @@ pub fn claim_tokens(
 }
 
 /// Validates all of the information and updates relevant states
-pub fn try_add_account_addresses(
-    storage: &mut dyn Storage,
-    api: &dyn Api,
-    config: &Config,
-    sender: &Addr,
-    account: &mut Account,
-    addresses: &Vec<AddressProofPermit>,
-    eth_pubkey: &String,
-    eth_sig: &String,
-    partial_tree: &Vec<String>,
-) -> StdResult<()> {
-    // Setup the items to validate
-    // let mut leaves_to_validate: Vec<(usize, [u8; 32])> = vec![];
+// pub fn try_add_account_addresses(
+//     storage: &mut dyn Storage,
+//     api: &dyn Api,
+//     config: &Config,
+//     sender: &Addr,
+//     account: &mut Account,
+//     addresses: &Vec<AddressProofPermit>,
+//     eth_pubkey: &String,
+//     eth_sig: &String,
+//     partial_tree: &Vec<String>,
+// ) -> StdResult<()> {
+//     // Setup the items to validate
+//     // let mut leaves_to_validate: Vec<(usize, [u8; 32])> = vec![];
 
-    // Iterate addresses
-    for permit in addresses.iter() {
-        if let Some(memo) = permit.memo.clone() {
-            let params: AddressProofMsg = from_binary(&Binary::from_base64(&memo)?)?;
+//     // Iterate addresses
+//     for permit in addresses.iter() {
+//         if let Some(memo) = permit.memo.clone() {
+//             let params: AddressProofMsg = from_binary(&Binary::from_base64(&memo)?)?;
 
-            // Avoid verifying sender
-            if &params.address != sender {
-                // Check permit legitimacy
-                validate_address_permit(storage, api, permit, &params, config.contract.clone())?;
-            }
+//             // Avoid verifying sender
+//             if &params.address != sender {
+//                 // Check permit legitimacy
+//                 validate_address_permit(storage, api, permit, &params, config.contract.clone())?;
+//             }
 
-            // Check that airdrop amount does not exceed maximum
-            if params.amount > config.max_amount {
-                return Err(claim_too_high(
-                    params.amount.to_string().as_str(),
-                    config.max_amount.to_string().as_str(),
-                ));
-            }
+//             // Check that airdrop amount does not exceed maximum
+//             if params.amount > config.max_amount {
+//                 return Err(claim_too_high(
+//                     params.amount.to_string().as_str(),
+//                     config.max_amount.to_string().as_str(),
+//                 ));
+//             }
 
-            // Update address if its not in an account
-            address_in_account_w(storage).update(
-                params.address.to_string().as_bytes(),
-                |state| -> StdResult<bool> {
-                    if state.is_some() {
-                        return Err(address_already_in_account(params.address.as_str()));
-                    }
+//             // Update address if its not in an account
+//             address_in_account_w(storage).update(
+//                 params.address.to_string().as_bytes(),
+//                 |state| -> StdResult<bool> {
+//                     if state.is_some() {
+//                         return Err(address_already_in_account(params.address.as_str()));
+//                     }
 
-                    Ok(true)
-                },
-            )?;
+//                     Ok(true)
+//                 },
+//             )?;
 
-            // Update eth_pubkey if its not in an account
-            eth_pubkey_in_account_w(storage).update(
-                eth_pubkey.to_string().as_bytes(),
-                |state| -> StdResult<bool> {
-                    if state.is_some() {
-                        return Err(address_already_in_account(&eth_pubkey.as_str()));
-                    }
+//             // Update eth_pubkey if its not in an account
+//             eth_pubkey_in_account_w(storage).update(
+//                 eth_pubkey.to_string().as_bytes(),
+//                 |state| -> StdResult<bool> {
+//                     if state.is_some() {
+//                         return Err(address_already_in_account(&eth_pubkey.as_str()));
+//                     }
 
-                    Ok(true)
-                },
-            )?;
+//                     Ok(true)
+//                 },
+//             )?;
 
-            // Update eth_sig if its not in an account
-            eth_sig_in_account_w(storage).update(
-                eth_sig.to_string().as_bytes(),
-                |state| -> StdResult<bool> {
-                    if state.is_some() {
-                        return Err(address_already_in_account(&eth_pubkey.as_str()));
-                    }
+//             // Update eth_sig if its not in an account
+//             eth_sig_in_account_w(storage).update(
+//                 eth_sig.to_string().as_bytes(),
+//                 |state| -> StdResult<bool> {
+//                     if state.is_some() {
+//                         return Err(address_already_in_account(&eth_pubkey.as_str()));
+//                     }
 
-                    Ok(true)
-                },
-            )?;
+//                     Ok(true)
+//                 },
+//             )?;
 
-            // generate merkleTree leaf with eth_pubkey & amount
-            let user_input = format!("{}{}", eth_pubkey, params.amount);
-            let hash = sha2::Sha256::digest(user_input.as_bytes())
-                .as_slice()
-                .try_into()
-                .map_err(|_| wrong_length())?;
+//             // generate merkleTree leaf with eth_pubkey & amount
+//             let user_input = format!("{}{}", eth_pubkey, params.amount);
+//             let hash = sha2::Sha256::digest(user_input.as_bytes())
+//                 .as_slice()
+//                 .try_into()
+//                 .map_err(|_| wrong_length())?;
 
-            let hash = partial_tree.into_iter().try_fold(hash, |hash, p| {
-                let mut proof_buf = [0; 32];
-                hex::decode_to_slice(p, &mut proof_buf)
-                    .expect("Error with merkle verification process #01!");
-                let mut hashes = [hash, proof_buf];
-                hashes.sort_unstable();
-                sha2::Sha256::digest(&hashes.concat())
-                    .as_slice()
-                    .try_into()
-                    .map_err(|_| wrong_length())
-            })?;
+//             let hash = partial_tree.into_iter().try_fold(hash, |hash, p| {
+//                 let mut proof_buf = [0; 32];
+//                 hex::decode_to_slice(p, &mut proof_buf)
+//                     .expect("Error with merkle verification process #01!");
+//                 let mut hashes = [hash, proof_buf];
+//                 hashes.sort_unstable();
+//                 sha2::Sha256::digest(&hashes.concat())
+//                     .as_slice()
+//                     .try_into()
+//                     .map_err(|_| wrong_length())
+//             })?;
 
-            let mut root_buf: [u8; 32] = [0; 32];
-            hex::decode_to_slice(config.merkle_root.as_ref(), &mut root_buf)
-                .expect("Error with merkle verification process #02!");
-            if root_buf != hash {
-                return Err(failed_verification());
-            }
+//             let mut root_buf: [u8; 32] = [0; 32];
+//             hex::decode_to_slice(config.merkle_root.as_ref(), &mut root_buf)
+//                 .expect("Error with merkle verification process #02!");
+//             if root_buf != hash {
+//                 return Err(failed_verification());
+//             }
 
-            // Add account as a leaf
-            // let leaf_hash =
-            //     Sha256::hash((eth_pubkey.to_string() + &params.amount.to_string()).as_bytes());
-            // leaves_to_validate.push((params.index as usize, leaf_hash));
+//             // Add account as a leaf
+//             // let leaf_hash =
+//             //     Sha256::hash((eth_pubkey.to_string() + &params.amount.to_string()).as_bytes());
+//             // leaves_to_validate.push((params.index as usize, leaf_hash));
 
-            // If valid then add to account array and sum total amount
-            account.addresses.push(params.address);
-            account.eth_pubkey = eth_pubkey.to_string();
-            account.eth_sig = eth_sig.to_string();
-            account.total_claimable += params.amount;
-        } else {
-            return Err(expected_memo());
-        }
-    }
+//             // If valid then add to account array and sum total amount
+//             account.addresses.push(params.address);
+//             account.eth_pubkey = eth_pubkey.to_string();
+//             account.eth_sig = eth_sig.to_string();
+//             account.total_claimable += params.amount;
+//         } else {
+//             return Err(expected_memo());
+//         }
+//     }
 
-    // Need to sort by index in order for the proof to work
-    // leaves_to_validate.sort_by_key(|item| item.0);
+//     // Need to sort by index in order for the proof to work
+//     // leaves_to_validate.sort_by_key(|item| item.0);
 
-    // let mut indices: Vec<usize> = vec![];
-    // let mut leaves: Vec<[u8; 32]> = vec![];
+//     // let mut indices: Vec<usize> = vec![];
+//     // let mut leaves: Vec<[u8; 32]> = vec![];
 
-    // for leaf in leaves_to_validate.iter() {
-    //     indices.push(leaf.0);
-    //     leaves.push(leaf.1);
-    // }
+//     // for leaf in leaves_to_validate.iter() {
+//     //     indices.push(leaf.0);
+//     //     leaves.push(leaf.1);
+//     // }
 
-    // Convert partial tree from base64 to binary
-    // let mut partial_tree_binary: Vec<[u8; 32]> = vec![];
-    // for node in partial_tree.iter() {
-    //     let mut arr: [u8; 32] = Default::default();
-    //     arr.clone_from_slice(node.as_slice());
-    //     partial_tree_binary.push(arr);
-    // }
+//     // Convert partial tree from base64 to binary
+//     // let mut partial_tree_binary: Vec<[u8; 32]> = vec![];
+//     // for node in partial_tree.iter() {
+//     //     let mut arr: [u8; 32] = Default::default();
+//     //     arr.clone_from_slice(node.as_slice());
+//     //     partial_tree_binary.push(arr);
+//     // }
 
-    // Prove that user is in airdrop
-    // let proof = MerkleProof::<Sha256>::new(partial_tree_binary);
-    // Convert to a fixed length array without messing up the contract
-    // let mut root: [u8; 32] = Default::default();
-    // root.clone_from_slice(config.merkle_root.as_slice());
-    // if !proof.verify(root, &indices, &leaves, config.total_accounts as usize) {
-    //     return Err(invalid_partial_tree());
-    // }
+//     // Prove that user is in airdrop
+//     // let proof = MerkleProof::<Sha256>::new(partial_tree_binary);
+//     // Convert to a fixed length array without messing up the contract
+//     // let mut root: [u8; 32] = Default::default();
+//     // root.clone_from_slice(config.merkle_root.as_slice());
+//     // if !proof.verify(root, &indices, &leaves, config.total_accounts as usize) {
+//     //     return Err(invalid_partial_tree());
+//     // }
 
-    Ok(())
-}
+//     Ok(())
+// }
 
 pub fn available(config: &Config, env: &Env) -> StdResult<()> {
     let current_time = env.block.time.seconds();
