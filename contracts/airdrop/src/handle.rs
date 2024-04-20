@@ -33,14 +33,12 @@ use shade_protocol::{
     },
     c_std::{
         from_binary, to_binary, Addr, Api, Binary, CosmosMsg, Decimal, DepsMut, Env, MessageInfo,
-        Response, StdResult, Storage, Uint128,
+        Response, StdError, StdResult, Storage, Uint128,
     },
     query_authentication::viewing_keys::ViewingKey,
     snip20::helpers::send_msg,
     utils::generic_response::ResponseStatus::{self, Success},
 };
-
-use self::validation::validate_claim;
 
 #[allow(clippy::too_many_arguments)]
 pub fn try_update_config(
@@ -434,7 +432,9 @@ pub fn try_claim(
     // Get account
     let sender = info.sender.clone();
     // let account = account_r(deps.storage).load(sender.to_string().as_bytes())?;
-    let state = claim_status_r(deps.storage, 0).may_load(eth_pubkey.as_bytes())?;
+    let state = claim_status_r(deps.storage, 0)
+        .may_load(eth_pubkey.as_bytes())
+        .map_err(|err| StdError::generic_err(err.to_string()))?;
 
     // Check if eth_pubkey has not claimed
     if state == Some(true) {
@@ -447,26 +447,30 @@ pub fn try_claim(
         eth_pubkey.clone(), // uses the saved account eth_pubkey
         eth_sig.clone(),
         config.clone(),
-    )?;
+    )
+    .map_err(|err| StdError::generic_err(err.to_string()))?;
 
     // generate merkleTree leaf with eth_pubkey & amount
-    let user_input = format!("{}{}", eth_pubkey, amount);
+    let user_input = format!("{}{}", eth_pubkey.to_string(), amount);
     let hash = sha2::Sha256::digest(user_input.as_bytes())
         .as_slice()
         .try_into()
         .map_err(|_| wrong_length())?;
 
-    let hash = partial_tree.into_iter().try_fold(hash, |hash, p| {
-        let mut proof_buf = [0; 32];
-        hex::decode_to_slice(p, &mut proof_buf)
-            .expect("Error with merkle verification process #01!");
-        let mut hashes = [hash, proof_buf];
-        hashes.sort_unstable();
-        sha2::Sha256::digest(&hashes.concat())
-            .as_slice()
-            .try_into()
-            .map_err(|_| wrong_length())
-    })?;
+    let hash = partial_tree
+        .into_iter()
+        .try_fold(hash, |hash, p| {
+            let mut proof_buf = [0; 32];
+            hex::decode_to_slice(p, &mut proof_buf)
+                .expect("Error with merkle verification process #01!");
+            let mut hashes = [hash, proof_buf];
+            hashes.sort_unstable();
+            sha2::Sha256::digest(&hashes.concat())
+                .as_slice()
+                .try_into()
+                .map_err(|_| wrong_length())
+        })
+        .map_err(|err| StdError::generic_err(err.to_string()))?;
 
     let mut root_buf: [u8; 32] = [0; 32];
     hex::decode_to_slice(config.merkle_root.as_ref(), &mut root_buf)
@@ -516,19 +520,24 @@ pub fn try_claim(
         msgs.push(hs2);
     };
 
-    total_claimed_w(deps.storage).update(|claimed| -> StdResult<Uint128> { Ok(amount) })?;
+    total_claimed_w(deps.storage)
+        .update(|claimed| -> StdResult<Uint128> { Ok(amount) })
+        .map_err(|err| StdError::generic_err(err.to_string()))?;
 
     Ok(Response::new()
-        .set_data(to_binary(&ExecuteAnswer::Claim {
-            status: ResponseStatus::Success,
-            claimed: account_total_claimed_r(deps.storage).load(sender.to_string().as_bytes())?,
-            address: info.sender.to_string(),
-            eth_pubkey: eth_pubkey.to_string(),
-            eth_sig: eth_sig.to_string(),
-            // total: account.total_claimable,
-            // finished_tasks: finished_tasks(deps.storage, sender.to_string())?,
-            // addresses: account.addresses,
-        })?)
+        .set_data(
+            to_binary(&ExecuteAnswer::Claim {
+                status: ResponseStatus::Success,
+                claimed: amount,
+                address: info.sender.to_string(),
+                eth_pubkey: eth_pubkey.to_string(),
+                eth_sig: eth_sig.to_string(),
+                // total: account.total_claimable,
+                // finished_tasks: finished_tasks(deps.storage, sender.to_string())?,
+                // addresses: account.addresses,
+            })
+            .map_err(|err| StdError::generic_err(err.to_string()))?,
+        )
         .add_messages(msgs))
 }
 
@@ -630,50 +639,50 @@ pub fn try_claim_decay(deps: DepsMut, env: &Env, _info: &MessageInfo) -> StdResu
 //     Ok((completed_percentage, unclaimed_percentage))
 // }
 
-pub fn claim_tokens(
-    storage: &mut dyn Storage,
-    _env: &Env,
-    info: &MessageInfo,
-    _config: &Config,
-    account: &Account,
-    // completed_percentage: Uint128,
-    // unclaimed_percentage: Uint128,
-) -> StdResult<Uint128> {
-    // send_amount
-    let sender = info.sender.to_string();
+// pub fn claim_tokens(
+//     storage: &mut dyn Storage,
+//     _env: &Env,
+//     info: &MessageInfo,
+//     _config: &Config,
+//     account: &Account,
+//     // completed_percentage: Uint128,
+//     // unclaimed_percentage: Uint128,
+// ) -> StdResult<Uint128> {
+//     // send_amount
+//     let sender = info.sender.to_string();
 
-    // hardcode to 100% because we do not have tasks assigned to claim
-    let completed_percentage = Uint128::new(100u128);
+//     // hardcode to 100% because we do not have tasks assigned to claim
+//     let completed_percentage = Uint128::new(100u128);
 
-    // Amount to be redeemed
-    let mut redeem_amount = Uint128::zero();
-    let state = claim_status_r(storage, 0).may_load(sender.as_bytes())?;
+//     // Amount to be redeemed
+//     let mut redeem_amount = Uint128::zero();
+//     let state = claim_status_r(storage, 0).may_load(sender.as_bytes())?;
 
-    // Update total claimed and calculate claimable
-    account_total_claimed_w(storage).update(sender.as_bytes(), |claimed| {
-        if let Some(claimed) = claimed {
-            // if the claimed state is true, redeem_amount is 0
-            if completed_percentage == Uint128::new(100u128) {
-                if state == Some(false) {
-                    redeem_amount = account.total_claimable.checked_sub(claimed)?;
-                } else {
-                    redeem_amount = Uint128::zero();
-                }
-            } else {
-                // redeem_amount = unclaimed_percentage
-                //     .multiply_ratio(account.total_claimable, Uint128::new(100u128));
-                redeem_amount = Uint128::zero();
-            }
-            // Update redeem amount with the decay multiplier
-            // redeem_amount = redeem_amount * decay_factor(env.block.time.seconds(), config);
-            Ok(claimed + redeem_amount)
-        } else {
-            Err(account_does_not_exist())
-        }
-    })?;
+//     // Update total claimed and calculate claimable
+//     account_total_claimed_w(storage).update(sender.as_bytes(), |claimed| {
+//         if let Some(claimed) = claimed {
+//             // if the claimed state is true, redeem_amount is 0
+//             if completed_percentage == Uint128::new(100u128) {
+//                 if state == Some(false) {
+//                     redeem_amount = account.total_claimable.checked_sub(claimed)?;
+//                 } else {
+//                     redeem_amount = Uint128::zero();
+//                 }
+//             } else {
+//                 // redeem_amount = unclaimed_percentage
+//                 //     .multiply_ratio(account.total_claimable, Uint128::new(100u128));
+//                 redeem_amount = Uint128::zero();
+//             }
+//             // Update redeem amount with the decay multiplier
+//             // redeem_amount = redeem_amount * decay_factor(env.block.time.seconds(), config);
+//             Ok(claimed + redeem_amount)
+//         } else {
+//             Err(account_does_not_exist())
+//         }
+//     })?;
 
-    Ok(redeem_amount)
-}
+//     Ok(redeem_amount)
+// }
 
 /// Validates all of the information and updates relevant states
 // pub fn try_add_account_addresses(

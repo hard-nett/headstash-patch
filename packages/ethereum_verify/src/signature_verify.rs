@@ -1,4 +1,5 @@
 use cosmwasm_std::{Deps, StdError, StdResult};
+use secret_toolkit::crypto::secp256k1::{PrivateKey, PublicKey};
 use sha2::Digest;
 use sha3::Keccak256;
 
@@ -31,7 +32,12 @@ pub fn verify_ethereum_text(
 
     // Verification
     let calculated_pubkey = deps.api.secp256k1_recover_pubkey(&hash, rs, recovery)?;
-    let calculated_address = ethereum_address_raw(&calculated_pubkey)?;
+
+    // Deserialize the uncompressed public key
+    let uncompressed_public_key = PublicKey::parse(&calculated_pubkey)
+        .map_err(|err| StdError::generic_err(err.to_string()))?;
+
+    let calculated_address = ethereum_address_raw(&uncompressed_public_key.serialize())?;
     if signer_address != calculated_address {
         return Ok(false);
     }

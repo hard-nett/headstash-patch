@@ -20,9 +20,9 @@ export const scrtIBCThiolDenom = "ibc/07FFE4A5E55AFA423DF355E3138858E6A302909F74
 const entropy = "eretskeretjableret";
 
 // airdrop contract
-export const scrtHeadstashCodeId = 6666;
-export const scrtHeadstashCodeHash = "57ea68df4e95b9a76739faf4ff8ee3037cd2ba3790c7fd67325f15c4cdfc4acd";
-export const scrtHeadstashContractAddr = "secret1rnf497svcr76zkp48y5tpzyv4drxuwj6anqdjn";
+export const scrtHeadstashCodeId = 6670;
+export const scrtHeadstashCodeHash = "70c7108b73f323e5035907473d8d01b8f24efaa93cf415c0c2159bcb9353eb61";
+export const scrtHeadstashContractAddr = "secret1yzdumxzjc220vlx6f7ahpykg7936jl23vue3vp";
 export const merkle_root = "d599867bdb2ade1e470d9ec9456490adcd9da6e0cfd8f515e2b95d345a5cd92f";
 
 // account stuff
@@ -75,10 +75,10 @@ let instantiate_headstash_contract = async () => {
       address: scrtTerpContractAddr,
       code_hash: scrt20CodeHash
     },
-    airdrop_2: {
-      address: scrtThiolContractAddr,
-      code_hash: scrt20CodeHash
-    },
+    // airdrop_2: {
+    //   address: scrtThiolContractAddr,
+    //   code_hash: scrt20CodeHash
+    // },
     start_date: 1713386815,
     end_date: 1744922815,
     decay_start: 1723927615,
@@ -118,6 +118,30 @@ let instantiate_headstash_contract = async () => {
 }
 
 
+let set_key = async () => {
+  const msg = { set_viewing_key: { key: entropy } }
+  const tx = await secretjs.tx.compute.executeContract({
+    sender: wallet.address,
+    contract_address: scrtHeadstashContractAddr,
+    msg: msg,
+    code_hash: scrtHeadstashCodeHash,
+  },
+    { gasLimit: 400_000, });
+  console.log(tx);
+}
+
+
+let headstash_config = async () => {
+  const q = await secretjs.query.compute.queryContract({
+    contract_address: scrtHeadstashContractAddr,
+    query: {
+      config: {},
+    },
+    code_hash: null,
+  });
+
+  console.log(q);
+}
 
 // Process command line arguments
 const args = process.argv.slice(2);
@@ -153,6 +177,14 @@ if (args.length < 1) {
 
 } else if (args[0] === '-a') { // create an account, claims airdrop 
   create_account(args[1])
+} else if (args[0] === '-set-v-key') { // create an account, claims airdrop 
+  set_key(args[1])
+
+  //////////////////////////////// HEADSTASH QUERIES ///////////////////////////////
+
+} else if (args[0] === '-q-h-config') { // create an account, claims airdrop 
+  headstash_config(args[1])
+
 
   //////////////////////////////// SNIP20 ACTIONS //////////////////////////////////
 } else if (args[0] === '-i-terp') {
@@ -163,7 +195,7 @@ if (args.length < 1) {
   i_snip20("thiol-snip20", "THIOL", scrtIBCThiolDenom)
     .then(() => { console.log("Created the Thiol Snip20!"); })
     .catch((error) => { console.error("Failed:", error); });
-    
+
 } else if (args[0] === '-deposit-terp') {
   if (args.length < 2) {
     console.error('Usage: -deposit-terp amount');

@@ -53,7 +53,6 @@ let create_account = async () => {
       // }
     })
 
-    console.log(encoded_memo);
   console.log(tx);
 }
 export { create_account }
