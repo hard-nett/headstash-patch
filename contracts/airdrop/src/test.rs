@@ -1,58 +1,152 @@
-#[cfg(test)]
-pub mod tests {
-    use crate::handle::inverse_normalizer;
-    use ethereum_verify::verify_ethereum_text;
-    use sha2::Digest;
-    use shade_protocol::{
-        airdrop::{account::AddressProofMsg, errors::wrong_length},
-        c_std::{
-            from_binary, testing::mock_dependencies, Addr, Binary, Response, StdResult, Uint128,
-        },
-    };
+// #[cfg(test)]
+// mod tests {
+//     use crate::contract::{execute, instantiate, query};
 
-    const ETH_PUBKEY: &str = "0x254768D47Cf8958a68242ce5AA1aDB401E1feF2B";
-    const SLICED_ETH_SIG: &str = "f7992bd3f7cb1030b5d69d3326c6e2e28bfde2e38cbb8de753d1be7b5a5ecbcf2d3eccd3fe2e1fccb2454c47dcb926bd047ecf5b74c7330584cbfd619248de811b";
-    const PLAINTEXT_MSG: &str = "secret13uazul89dp0lypuxcz0upygpjy0ftdah4lnrs4";
+//     use super::*;
 
-    #[test]
-    fn test_valid_eth_sig() {
-        let deps = mock_dependencies();
-        let decoded = hex::decode(SLICED_ETH_SIG).unwrap();
-        let res =
-            verify_ethereum_text(deps.as_ref(), &PLAINTEXT_MSG, &decoded, &ETH_PUBKEY).unwrap();
-        assert_eq!(true, res);
-    }
+//     use shade_protocol::{
+//         airdrop::{ExecuteMsg, InstantiateMsg, QueryMsg},
+//         c_std::{
+//             testing::{mock_dependencies, mock_dependencies_with_balance, mock_env, mock_info},
+//             Coin, StdError, Uint128,
+//         },
+//     };
 
-    #[test]
-    fn decay_factor() {
-        assert_eq!(
-            Uint128::new(50u128),
-            Uint128::new(100u128) * inverse_normalizer(100, 200, 300)
-        );
+//     #[test]
+//     fn proper_initialization() {
+//         let mut deps = mock_dependencies();
+//         let info = mock_info(
+//             "creator",
+//             &[Coin {
+//                 denom: "earth".to_string(),
+//                 amount: Uint128::new(1000),
+//             }],
+//         );
+//         let init_msg = InstantiateMsg {
+//             snip20_1: todo!(),
+//             snip20_2: todo!(),
+//             merkle_root: todo!(),
+//             viewing_key: todo!(),
+//             total_amount: todo!(),
+//             claim_msg_plaintext: todo!(),
+//             admin: todo!(),
+//         };
 
-        assert_eq!(
-            Uint128::new(25u128),
-            Uint128::new(100u128) * inverse_normalizer(0, 75, 100)
-        );
-    }
+//         // we can just call .unwrap() to assert this was a success
+//         let res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
 
-    const MSGTYPE: &str = "wasm/MsgExecuteContract";
+//         assert_eq!(0, res.messages.len());
 
-    #[test]
-    fn memo_deserialization() {
-        let expected_memo = AddressProofMsg {
-            address: Addr::unchecked("secret19q7h2zy8mgesy3r39el5fcm986nxqjd7cgylrz".to_string()),
-            amount: Uint128::new(1000000u128),
-            contract: Addr::unchecked("secret1sr62lehajgwhdzpmnl65u35rugjrgznh2572mv".to_string()),
-            index: 10,
-            key: "account-creation-permit".to_string(),
-        };
+//         // it worked, let's query the state
+//         let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+//         // assert_eq!(17, value.count);
+//     }
 
-        let deserialized_memo: AddressProofMsg = from_binary(
-            &Binary::from_base64(
-                &"eyJhZGRyZXNzIjoic2VjcmV0MTlxN2gyenk4bWdlc3kzcjM5ZWw1ZmNtOTg2bnhxamQ3Y2d5bHJ6IiwiYW1vdW50IjoiMTAwMDAwMCIsImNvbnRyYWN0Ijoic2VjcmV0MXNyNjJsZWhhamd3aGR6cG1ubDY1dTM1cnVnanJnem5oMjU3Mm12IiwiaW5kZXgiOjEwLCJrZXkiOiJhY2NvdW50LWNyZWF0aW9uLXBlcm1pdCJ9"
-                    .to_string()).unwrap()).unwrap();
+//     #[test]
+//     fn increment() {
+//         let mut deps = mock_dependencies_with_balance(&[Coin {
+//             denom: "token".to_string(),
+//             amount: Uint128::new(2),
+//         }]);
+//         let info = mock_info(
+//             "creator",
+//             &[Coin {
+//                 denom: "token".to_string(),
+//                 amount: Uint128::new(2),
+//             }],
+//         );
+//         let init_msg = InstantiateMsg {
+//             snip20_1: todo!(),
+//             snip20_2: todo!(),
+//             merkle_root: todo!(),
+//             viewing_key: todo!(),
+//             total_amount: todo!(),
+//             claim_msg_plaintext: todo!(),
+//             admin: todo!(),
+//         };
 
-        assert_eq!(deserialized_memo, expected_memo)
-    }
-}
+//         let _res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+//         // anyone can increment
+//         let info = mock_info(
+//             "anyone",
+//             &[Coin {
+//                 denom: "token".to_string(),
+//                 amount: Uint128::new(2),
+//             }],
+//         );
+
+//         let exec_msg = ExecuteMsg::Claim {
+//             amount: todo!(),
+//             eth_pubkey: todo!(),
+//             eth_sig: todo!(),
+//             proof: todo!(),
+//         };
+//         let _res = execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
+
+//         // should increase total claimed by 420
+//         let res = query(deps.as_ref(), mock_env(), QueryMsg::Config {}).unwrap();
+//         // let value: CountResponse = from_binary(&res).unwrap();
+//         // assert_eq!(420, value);
+//     }
+
+//     #[test]
+//     fn reset() {
+//         let mut deps = mock_dependencies_with_balance(&[Coin {
+//             denom: "token".to_string(),
+//             amount: Uint128::new(2),
+//         }]);
+//         let info = mock_info(
+//             "creator",
+//             &[Coin {
+//                 denom: "token".to_string(),
+//                 amount: Uint128::new(2),
+//             }],
+//         );
+//         let init_msg = InstantiateMsg {
+//             snip20_1: todo!(),
+//             snip20_2: todo!(),
+//             merkle_root: todo!(),
+//             viewing_key: todo!(),
+//             total_amount: todo!(),
+//             claim_msg_plaintext: todo!(),
+//             admin: todo!(),
+//         };
+
+//         let _res = instantiate(deps.as_mut(), mock_env(), info, init_msg).unwrap();
+
+//         // not anyone can reset
+//         let info = mock_info(
+//             "anyone",
+//             &[Coin {
+//                 denom: "token".to_string(),
+//                 amount: Uint128::new(2),
+//             }],
+//         );
+//         let exec_msg = ExecuteMsg::Clawback {};
+
+//         let res = execute(deps.as_mut(), mock_env(), info, exec_msg);
+
+//         match res {
+//             Err(StdError::GenericErr { .. }) => {}
+//             _ => panic!("Must return unauthorized error"),
+//         }
+
+//         // only the original creator can clawback
+//         let info = mock_info(
+//             "creator",
+//             &[Coin {
+//                 denom: "token".to_string(),
+//                 amount: Uint128::new(2),
+//             }],
+//         );
+//         let exec_msg = ExecuteMsg::Clawback {};
+
+//         let _res = execute(deps.as_mut(), mock_env(), info, exec_msg).unwrap();
+
+//         // should now be clawedback
+//         // let res = query(deps.as_ref(), mock_env(), QueryMsg::GetCount {}).unwrap();
+//         // // let value: CountResponse = from_binary(&res).unwrap();
+//         // assert_eq!(5, value.count);
+//     }
+// }

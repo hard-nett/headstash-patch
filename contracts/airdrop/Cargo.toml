@@ -24,7 +24,17 @@ debug-print = ["shade-protocol/debug-print"]
 
 [dependencies]
 shade-protocol = { version = "0.1.0", path = "../../packages/shade_protocol", features = ["airdrop"] }
+secret-toolkit = { version = "0.10.0", default-features = false, features = [
+  "utils",
+  "serialization",
+  "viewing-key",
+  "permit",
+  "storage",
+  "snip20",
+  "snip721",
+] }
 ethereum-verify      =  { version = "0.1.0", path = "../../packages/ethereum_verify"}
 hex = "0.4"
 sha2                 = { version = "0.10.2", default-features = false }
+sha3 = "0.10"
 rs_merkle = { git = "https://github.com/FloppyDisck/rs-merkle", branch = "node_export" }

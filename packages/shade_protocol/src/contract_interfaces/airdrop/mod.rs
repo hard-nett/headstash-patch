@@ -10,71 +10,27 @@ use crate::{
 
 use crate::utils::{ExecuteCallback, InstantiateCallback, Query};
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::ContractInfo;
 
 #[cw_serde]
 pub struct Config {
-    pub admin: Addr,
-    // Used for permit validation when querying
-    pub contract: Addr,
-    // Where the decayed tokens will be dumped, if none then nothing happens
-    pub dump_address: Option<Addr>,
-    // The snip20 to be minted
-    pub airdrop_snip20: Contract,
-    // An optional, second snip20 to be minted
-    pub airdrop_snip20_optional: Option<Contract>,
-    // Airdrop amount
-    pub airdrop_amount: Uint128,
-    // Required tasks
-    // pub task_claim: Vec<RequiredTask>,
-    // Checks if airdrop has started / ended
-    pub start_date: u64,
-    // Airdrop stops at end date if there is one
-    pub end_date: Option<u64>,
-    // Starts to decay at this date
-    pub decay_start: Option<u64>,
-    // This is necessary to validate the airdrop information
-    // tree root
+    pub snip20_1: Contract,
+    pub snip20_2: Option<ContractInfo>,
     pub merkle_root: Binary,
-    // tree height
-    pub total_accounts: u32,
-    // {wallet}
+    pub viewing_key: String,
     pub claim_msg_plaintext: String,
-    // max possible reward amount; used to prevent collision possibility
-    pub max_amount: Uint128,
-    // Protects from leaking user information by limiting amount detail
-    pub query_rounding: Uint128,
+    pub admin: Option<Addr>,
 }
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    pub admin: Option<Addr>,
-    // Where the decayed tokens will be dumped, if none then nothing happens
-    pub dump_address: Option<Addr>,
-    pub airdrop_token: Contract,
-    // Airdrop amount
-    pub airdrop_amount: Uint128,
-    // an optional, second snip20 to be minted
-    pub airdrop_2: Option<Contract>,
-    // The airdrop time limit
-    pub start_date: Option<u64>,
-    // Can be set to never end
-    pub end_date: Option<u64>,
-    // Starts to decay at this date
-    pub decay_start: Option<u64>,
-    // Base64 encoded version of the tree root
+    pub snip20_1: Contract,
+    pub snip20_2: Option<ContractInfo>,
     pub merkle_root: Binary,
-    // Root height
-    pub total_accounts: u32,
-    // Max possible reward amount
-    pub max_amount: Uint128,
-    // Default gifted amount
-    // pub default_claim: Uint128,
-    // The task related claims
-    // pub task_claim: Vec<RequiredTask>,
-    /// {wallet}
+    pub viewing_key: String,
+    pub total_amount: Uint128,
     pub claim_msg_plaintext: String,
-    // Protects from leaking user information by limiting amount detail
-    pub query_rounding: Uint128,
+    pub admin: Option<Addr>,
 }
 
 impl InstantiateCallback for InstantiateMsg {
@@ -83,48 +39,13 @@ impl InstantiateCallback for InstantiateMsg {
 
 #[cw_serde]
 pub enum ExecuteMsg {
-    UpdateConfig {
-        admin: Option<Addr>,
-        dump_address: Option<Addr>,
-        query_rounding: Option<Uint128>,
-        start_date: Option<u64>,
-        end_date: Option<u64>,
-        decay_start: Option<u64>,
-        padding: Option<String>,
-    },
-    // AddTasks {
-    //     tasks: Vec<RequiredTask>,
-    //     padding: Option<String>,
-    // },
-    // CompleteTask {
-    //     address: Addr,
-    //     padding: Option<String>,
-    // },
-    // Account {
-    //     addresses: Vec<AddressProofPermit>,
-    //     eth_pubkey: String,
-    //     eth_sig: String,
-    //     partial_tree: Vec<String>,
-    //     padding: Option<String>,
-    // },
-    DisablePermitKey {
-        key: String,
-        padding: Option<String>,
-    },
-    SetViewingKey {
-        key: String,
-        padding: Option<String>,
-    },
     Claim {
         amount: Uint128,
         eth_pubkey: String,
         eth_sig: String,
-        partial_tree: Vec<String>,
-        padding: Option<String>,
+        proof: Vec<String>,
     },
-    ClaimDecay {
-        padding: Option<String>,
-    },
+    Clawback {},
 }
 
 impl ExecuteCallback for ExecuteMsg {
@@ -181,19 +102,6 @@ pub enum ExecuteAnswer {
 #[cw_serde]
 pub enum QueryMsg {
     Config {},
-    Dates {
-        current_date: Option<u64>,
-    },
-    TotalClaimed {},
-    Account {
-        permit: AccountPermit,
-        current_date: Option<u64>,
-    },
-    AccountWithKey {
-        account: Addr,
-        key: String,
-        current_date: Option<u64>,
-    },
 }
 
 impl Query for QueryMsg {
@@ -202,28 +110,8 @@ impl Query for QueryMsg {
 
 #[cw_serde]
 pub enum QueryAnswer {
-    Config {
+    HeadstashConfigResponse {
         config: Config,
-    },
-    Dates {
-        start: u64,
-        end: Option<u64>,
-        decay_start: Option<u64>,
-        decay_factor: Option<Uint128>,
-    },
-    TotalClaimed {
-        claimed: Uint128,
-    },
-    Account {
-        // Total eligible
-        total: Uint128,
-        // Total claimed
-        claimed: Uint128,
-        // Total unclaimed but available
-        unclaimed: Uint128,
-        // finished_tasks: Vec<RequiredTask>,
-        // Addresses claimed
-        addresses: Vec<Addr>,
     },
 }
 
